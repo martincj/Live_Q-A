@@ -9,6 +9,7 @@
     #questions div { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
     .hidden { display: none; }
   </style>
+
 </head>
 <body>
   <h1>Live Q&A</h1>
@@ -32,6 +33,12 @@
   <div id="moderator" class="hidden">
     <h2>Moderator Panel</h2>
     <div id="all-questions"></div>
+    <div id="sorting-controls">
+      <button id="sort-recency">Sort by Recency</button>
+      <button id="sort-votes">Sort by Votes</button>
+      <button id="sort-status">Sort by Status</button>
+    </div>
+    <div id="question-list"></div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
@@ -88,6 +95,27 @@
         container.appendChild(div);
       });
     });
+
+    // Fetch and display sorted questions
+    function fetchSortedQuestions(sortBy) {
+      fetch(`/questions?sortBy=${sortBy}`)
+        .then((response) => response.json())
+        .then((questions) => {
+          const questionList = document.getElementById('question-list');
+          questionList.innerHTML = ''; // Clear existing questions
+          questions.forEach((question) => {
+            const questionItem = document.createElement('div');
+            questionItem.textContent = `${question.text} (Votes: ${question.upvotes}, Status: ${question.status})`;
+            questionList.appendChild(questionItem);
+          });
+        })
+        .catch((error) => console.error('Error fetching sorted questions:', error));
+    }
+
+    // Event listeners for sorting buttons
+    document.getElementById('sort-recency').addEventListener('click', () => fetchSortedQuestions('recency'));
+    document.getElementById('sort-votes').addEventListener('click', () => fetchSortedQuestions('votes'));
+    document.getElementById('sort-status').addEventListener('click', () => fetchSortedQuestions('status'));
   </script>
 </body>
 </html>

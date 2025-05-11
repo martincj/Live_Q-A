@@ -30,6 +30,26 @@ db.serialize(() => {
   )`);
 });
 
+// Add an endpoint to fetch sorted questions
+app.get('/questions', (req, res) => {
+  const { sortBy } = req.query;
+
+  let orderByClause = 'created_at DESC'; // Default: sort by recency
+  if (sortBy === 'votes') {
+    orderByClause = 'upvotes DESC';
+  } else if (sortBy === 'status') {
+    orderByClause = 'status ASC, created_at DESC';
+  }
+
+  db.all(`SELECT * FROM questions ORDER BY ${orderByClause}`, [], (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: 'Failed to fetch questions' });
+    } else {
+      res.json(rows);
+    }
+  });
+});
+
 // WebSocket logic
 io.on('connection', (socket) => {
   console.log('a user connected:', socket.id);
@@ -66,19 +86,15 @@ io.on('connection', (socket) => {
 
   socket.on('moderator_action', ({ id, action, password }) => {
     if (password !== MODERATOR_PASSWORD) return;
+
     if (action === 'live') {
       db.run("UPDATE questions SET status = 'approved' WHERE status = 'live'");
       db.run("UPDATE questions SET status = 'live' WHERE id = ?", [id]);
     } else {
       db.run("UPDATE questions SET status = ? WHERE id = ?", [action, id]);
     }
-    db.all("SELECT * FROM questions WHERE status = 'approved'", [], (err, rows) => {
-      if (!err) io.emit('approved_questions', rows);
-    });
-    db.get("SELECT * FROM questions WHERE status = 'live'", [], (err, row) => {
-      if (!err) io.emit('live_question', row);
-    });
-    db.all("SELECT * FROM questions", [], (err, rows) => {
+
+    db.all("SELECT * FROM questions ORDER BY created_at DESC", [], (err, rows) => {
       if (!err) io.to('moderators').emit('all_questions', rows);
     });
   });
