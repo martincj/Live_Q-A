@@ -30,12 +30,24 @@
       color: #e7ff2e;
       margin-top: 10px;
     }
+    #event-name {
+      font-size: 1.5em;
+      color: #ffffff;
+      margin-top: 20px;
+    }
+    #event-url {
+      font-size: 1.2em;
+      color: #ffffff;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <div id="live-question-container">
     <div id="live-question">Waiting for a live question...</div>
     <div id="username"></div>
+    <div id="event-name">VBC Live Event</div>
+    <div id="event-url">Event URL: Not Set</div>
   </div>
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -47,6 +59,8 @@
     // END TEST
     const display = document.getElementById('live-question');
     const user = document.getElementById('username');
+    const eventName = document.getElementById('event-name');
+    const eventUrl = document.getElementById('event-url');
 
     socket.on('live_question', (question) => {
       if (question) {
@@ -55,21 +69,22 @@
       } else {
         // Clear the live question display and show the participant view URL
         user.textContent = '';
-        const participantUrl = `http://${window.location.hostname}:3000`; // Replace 3000 with your server's port
-        display.innerHTML = `
-          Waiting for a live question...<br>
-          <span style="font-size: 0.8em; color: #ccc;">Visit <a href="${participantUrl}" target="_blank" style="color: #4caf50;">${participantUrl}</a> to submit your questions.</span>
-        `;
+        display.textContent = 'Waiting for a live question...';
+        eventName.textContent = 'Event Name: Not Set';
+        eventUrl.textContent = 'Event URL: Not Set';
       }
     });
 
-    socket.on('network_ip', (networkIP) => {
-      const participantUrl = `http://${networkIP}:3000`; // Use the network IP from the server
-      display.innerHTML = `
-        Waiting for a live question...<br>
-        <span style="font-size: 0.8em; color: #ccc;">Visit <a href="${participantUrl}" target="_blank" style="color: #4caf50;">${participantUrl}</a> to submit your questions.</span>
-      `;
+    // Listen for event name updates
+    socket.on('event_name_updated', ({ eventName: updatedEventName }) => {
+      eventName.textContent = `${updatedEventName}`;
     });
+
+    // Listen for event URL updates
+    socket.on('event_ip_updated', ({ eventURL }) => {
+      eventUrl.textContent = `To submit questions, please visit ${eventURL}`;
+    });
+
   </script>
 </body>
 </html>

@@ -323,6 +323,15 @@ io.on('connection', (socket) => {
       }
     });
   });
+
+  // Send notifications of updates when an update event button is clicked.
+  socket.on('save_event_config', ({ eventName, eventURL, eventLength }) => {
+    console.log('Event updated:', eventName, eventURL, eventLength);
+    // Broadcast the event name to all connected clients
+    io.emit('event_name_updated', { eventName });
+    io.emit('event_ip_updated', { eventURL });
+    io.emit('event_length_updated', { eventLength });
+  });
 });
 
 server.listen(3000, () => {

@@ -12,7 +12,7 @@
 
 </head>
 <body>
-  <h1>VBC Youth Q&A</h1>
+  <h1 id="event-title">VBC</h1>
   <p>To submit a question, just enter a name (optional) and your question and then click the submit button. After review, you should see your question along with the questions of other students appear in the "Your Questions" list. If you see a question you are also interested in, just click the vote button under it.</p>
 
   <div id="participant">
@@ -30,6 +30,12 @@
     const socket = io();
     const votedQuestions = new Set(); // Track questions the participant has voted on
     let username = ''; // Store the participant's username
+
+    // Listen for the updated event name from the server
+    socket.on('event_name_updated', ({ eventName }) => {
+      const eventTitle = document.getElementById('event-title');
+      eventTitle.textContent = eventName; // Update the <h1> with the new event name
+    });
 
     // Submit a question
     function submitQuestion() {

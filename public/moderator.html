@@ -55,13 +55,14 @@
     <label for="event-name">Event Name:</label>
     <input type="text" id="event-name" placeholder="Enter event name"><br><br>
 
-    <label for="IP-address">Max Questions:</label>
-    <input type="text" id="ip-address" placeholder="Example: 01.02.03.04"><br><br>
+    <label for="URL-field">URL</label>
+    <input type="text" id="URL-field" placeholder="Example: 01.02.03.04"><br><br>
 
-    <label for="event-length">Event Password:</label>
-    <input type="number" id="event-length" placeholder="Length in hours (e.g. 2)"><br><br>
+    <label for="event-length">Event Length:</label>
+    <input type="number" id="event-length" placeholder="In hours (e.g. 2)"><br><br>
 
-    <button onclick="saveEventConfig()">Save Configuration</button>
+    <button onclick="saveEventConfig()">Update</button>
+
   </div>
 
   <!-- Add sorting buttons -->
@@ -201,11 +202,12 @@
     // Save Event Configuration
     function saveEventConfig() {
       const eventName = document.getElementById('event-name').value;
-      const IPaddress = document.getElementById('IP-address').value;
+      const eventURL = document.getElementById('URL-field').value;
       const eventLength = document.getElementById('event-length').value;
 
-      socket.emit('save_event_config', { eventName, IPaddress, eventLength });
+      socket.emit('save_event_config', { eventName, eventURL, eventLength });
       alert('Event configuration saved!');
+      console.log('Updated information:', { eventName, eventURL, eventLength });
     }
   </script>
 
