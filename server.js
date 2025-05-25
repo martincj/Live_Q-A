@@ -83,6 +83,9 @@ app.get('/moderator', (req, res) => {
 });
 
 // WebSocket logic
+let currentEventName = 'VBC Event'; // Store the event name in memory
+let currentEventDatetime = ''; // Store the event datetime in memory
+
 io.on('connection', (socket) => {
   console.log('a user connected:', socket.id);
 
@@ -325,13 +328,19 @@ io.on('connection', (socket) => {
   });
 
   // Send notifications of updates when an update event button is clicked.
-  socket.on('save_event_config', ({ eventName, eventURL, eventDateTime }) => {
-    console.log('Event updated:', eventName, eventURL, eventDateTime);
-    // Broadcast the event name to all connected clients
+  socket.on('save_event_config', ({ eventName, eventURL, eventDatetime }) => { // Key: eventDatetime
+    console.log('Received eventDatetime from moderator:', eventDatetime); // Debugging
+    currentEventName = eventName; // Update the stored event name
+    currentEventDatetime = eventDatetime; // Update the stored event datetime
+    console.log('Event updated:', eventName, eventURL, eventDatetime);
     io.emit('event_name_updated', { eventName });
     io.emit('event_ip_updated', { eventURL });
-    io.emit('event_datetime_updated', { eventDateTime });
+    io.emit('event_datetime_updated', { eventDatetime });
   });
+
+  // Send the current event configuration to participants when they connect
+  socket.emit('event_name_updated', { eventName: currentEventName });
+  socket.emit('event_datetime_updated', { eventDatetime: currentEventDatetime });
 });
 
 server.listen(3000, () => {

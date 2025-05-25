@@ -28,14 +28,66 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    const votedQuestions = new Set(); // Track questions the participant has voted on
-    let username = ''; // Store the participant's username
+    const eventTitle = document.getElementById('event-title');
+
+    // Function to generate a new participant ID
+    function generateParticipantID() {
+      return 'participant_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Load values from localStorage
+    let storedEventName = localStorage.getItem('eventName');
+    let storedEventDatetime = localStorage.getItem('eventDatetime');
+    let participantID = localStorage.getItem('participantID');
+
+    // On page load, set the title to the stored eventName (if available)
+    window.addEventListener('load', () => {
+      // If no participant ID exists, generate one
+      if (!participantID) {
+        participantID = generateParticipantID();
+        localStorage.setItem('participantID', participantID);
+      }
+
+      console.log('Participant ID:', participantID);
+
+      // Set the event title if stored in localStorage
+      if (storedEventName) {
+        eventTitle.textContent = storedEventName;
+      }
+    });
 
     // Listen for the updated event name from the server
     socket.on('event_name_updated', ({ eventName }) => {
-      const eventTitle = document.getElementById('event-title');
-      eventTitle.textContent = eventName; // Update the <h1> with the new event name
+      // Check if the eventName has changed
+      if (storedEventName !== eventName) {
+        storedEventName = eventName;
+        localStorage.setItem('eventName', eventName);
+
+        // Generate a new participant ID if the eventName changes
+        participantID = generateParticipantID();
+        localStorage.setItem('participantID', participantID);
+      }
+
+      // Update the title in the participant view
+      eventTitle.textContent = eventName;
     });
+
+    // Listen for the updated event datetime from the server
+    socket.on('event_datetime_updated', ({ eventDatetime }) => {
+      // Check if the eventDatetime has changed
+      if (storedEventDatetime !== eventDatetime) {
+        console.log('Updating eventDatetime in localStorage:', eventDatetime); // Debugging
+        storedEventDatetime = eventDatetime;
+        localStorage.setItem('eventDatetime', eventDatetime);
+
+        // Generate a new participant ID if the eventDatetime changes
+        participantID = generateParticipantID();
+        localStorage.setItem('participantID', participantID);
+      }
+    });
+
+    const votedQuestions = new Set(); // Track questions the participant has voted on
+    let username = ''; // Store the participant's username
 
     // Submit a question
     function submitQuestion() {

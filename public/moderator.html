@@ -204,7 +204,7 @@
       const eventURL = document.getElementById('URL-field').value;
       const eventDatetime = document.getElementById('event-datetime').value;
 
-      socket.emit('save_event_config', { eventName, eventURL, eventDatetime });
+      socket.emit('save_event_config', { eventName, eventURL, eventDatetime }); // Key: eventDatetime
       alert('Event configuration saved!');
       console.log('Updated information:', { eventName, eventURL, eventDatetime });
     }
