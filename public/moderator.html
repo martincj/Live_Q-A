@@ -58,11 +58,10 @@
     <label for="URL-field">URL</label>
     <input type="text" id="URL-field" placeholder="Example: 01.02.03.04"><br><br>
 
-    <label for="event-length">Event Length:</label>
-    <input type="number" id="event-length" placeholder="In hours (e.g. 2)"><br><br>
+    <label for="event-datetime">Event Date and Time:</label>
+    <input type="datetime-local" id="event-datetime" placeholder="Select event date and time"><br><br>
 
     <button onclick="saveEventConfig()">Update</button>
-
   </div>
 
   <!-- Add sorting buttons -->
@@ -203,11 +202,11 @@
     function saveEventConfig() {
       const eventName = document.getElementById('event-name').value;
       const eventURL = document.getElementById('URL-field').value;
-      const eventLength = document.getElementById('event-length').value;
+      const eventDatetime = document.getElementById('event-datetime').value;
 
-      socket.emit('save_event_config', { eventName, eventURL, eventLength });
+      socket.emit('save_event_config', { eventName, eventURL, eventDatetime });
       alert('Event configuration saved!');
-      console.log('Updated information:', { eventName, eventURL, eventLength });
+      console.log('Updated information:', { eventName, eventURL, eventDatetime });
     }
   </script>
 
