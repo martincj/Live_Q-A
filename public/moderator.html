@@ -98,6 +98,9 @@
         div.className = 'question';
         div.setAttribute('data-id', q.id); // Add a data-id attribute
 
+        // Debugging: Log the participant IDs being compared
+        console.log('Moderator receiving a question participantID:', q.participant_id);
+
         // Add styles for live and approved questions
         if (q.status === 'live') {
           div.classList.add('live'); // Highlight live questions

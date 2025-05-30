@@ -40,6 +40,9 @@
     let storedEventDatetime = localStorage.getItem('eventDatetime');
     let participantID = localStorage.getItem('participantID');
 
+    // Retrieve the list of voted questions from localStorage
+    let votedQuestions = new Set(JSON.parse(localStorage.getItem('votedQuestions')) || []);
+
     // On page load, set the title to the stored eventName (if available)
     window.addEventListener('load', () => {
       // If no participant ID exists, generate one
@@ -66,6 +69,9 @@
         // Generate a new participant ID if the eventName changes
         participantID = generateParticipantID();
         localStorage.setItem('participantID', participantID);
+
+        // Delete previous list of voted question from localStorage
+        localStorage.removeItem('votedQuestions');
       }
 
       // Update the title in the participant view
@@ -83,19 +89,27 @@
         // Generate a new participant ID if the eventDatetime changes
         participantID = generateParticipantID();
         localStorage.setItem('participantID', participantID);
+
+        // Delete previous list of voted question from localStorage
+        localStorage.removeItem('votedQuestions');
       }
     });
 
-    const votedQuestions = new Set(); // Track questions the participant has voted on
     let username = ''; // Store the participant's username
 
     // Submit a question
     function submitQuestion() {
-      username = document.getElementById('username').value;
+      const username = document.getElementById('username').value;
       const text = document.getElementById('question').value;
+      const participantID = localStorage.getItem('participantID'); // Retrieve participant ID from localStorage
+
       if (text.trim()) {
-        socket.emit('submit_question', { username, text });
-        document.getElementById('question').value = '';
+        // Emit the question to the server with the participant ID
+        socket.emit('submit_question', { username, text, participantID });
+        document.getElementById('question').value = ''; // Clear the input field
+        alert('Your question has been submitted!');
+      } else {
+        alert('Please enter a question before submitting.');
       }
     }
 
@@ -141,26 +155,28 @@
         const div = document.createElement('div');
         div.className = 'question';
         div.setAttribute('data-id', q.id); // Add a unique identifier for the question
+
+        // Debugging: Log the participant IDs being compared
+        console.log('Question participantID:', q.participant_id);
+        console.log('LocalStorage participantID:', localStorage.getItem('participantID'));
+
         div.innerHTML = `
           <span>${q.text} | <span class="vote-count">Votes: ${q.upvotes}</span></span>
-          ${q.username !== username && !votedQuestions.has(q.id) ? 
+          ${q.participant_id !== localStorage.getItem('participantID') && !votedQuestions.has(q.id) ? 
             `<button onclick="vote('${q.id}')">Vote</button>` : ''}
         `;
         container.appendChild(div);
       });
     }
 
-    // Vote for a question
+    // Function to handle voting on a question
     function vote(id) {
       if (!votedQuestions.has(id)) {
         socket.emit('upvote', id); // Emit the upvote event to the server
         votedQuestions.add(id); // Mark the question as voted
-        updateQuestionList([...document.querySelectorAll('.question')].map(div => ({
-          id: div.querySelector('button')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1],
-          text: div.querySelector('span').textContent.split(' (')[0],
-          upvotes: parseInt(div.querySelector('span').textContent.match(/\((\d+) votes\)/)?.[1] || 0) + 1,
-          username: username
-        })));
+
+        // Persist the updated votedQuestions set in localStorage
+        localStorage.setItem('votedQuestions', JSON.stringify([...votedQuestions]));
       }
     }
   </script>

@@ -20,6 +20,7 @@ db.serialize(() => {
     id TEXT PRIMARY KEY,
     username TEXT,
     text TEXT NOT NULL,
+    participant_id TEXT,
     status TEXT NOT NULL,
     upvotes INTEGER DEFAULT 0,
     created_at INTEGER
@@ -33,8 +34,10 @@ db.serialize(() => {
     id TEXT PRIMARY KEY,
     username TEXT,
     text TEXT NOT NULL,
+    participant_id TEXT,
     status TEXT NOT NULL,
     upvotes INTEGER DEFAULT 0,
+    created_at INTEGER,
     archived_at INTEGER
   )`);
 });
@@ -67,6 +70,7 @@ app.get('/questions', (req, res) => {
     if (err) {
       res.status(500).json({ error: 'Failed to fetch questions' });
     } else {
+      console.log('Questions retrieved from database:', rows); // debugging to verify that the participant_id is included in the rows arrage retriecved from the database
       res.json(rows);
     }
   });
@@ -93,7 +97,12 @@ io.on('connection', (socket) => {
   socket.emit('network_ip', networkIP); // Emit the network IP to the client
 
   db.all("SELECT * FROM questions WHERE status = 'approved'", [], (err, rows) => {
-    if (!err) socket.emit('approved_questions', rows);
+    if (!err) {
+      console.log('Questions retrieved from database:', rows); // Debugging
+      socket.emit('approved_questions', rows); // Send the questions to the client
+    } else {
+      console.error('Error retrieving questions:', err.message);
+    }
   });
   db.get("SELECT * FROM questions WHERE status = 'live'", [], (err, row) => {
     if (!err) socket.emit('live_question', row);
@@ -101,11 +110,21 @@ io.on('connection', (socket) => {
 
   let submittedQuestionIds = new Set();
 
-  socket.on('submit_question', ({ username, text }) => {
-    const id = uuidv4();
+  socket.on('submit_question', ({ username, text, participantID }) => {
+    const id = uuidv4(); // Generate a unique ID for the question
     const created_at = Date.now();
-    const stmt = db.prepare("INSERT INTO questions (id, username, text, status, created_at) VALUES (?, ?, ?, 'submitted', ?)");
-    stmt.run(id, username, text, created_at, (err) => {
+    const status = 'submitted'; // Define the status for clarity
+      // Log the details of the submitted question
+    console.log('New Question Submitted:', {
+      id,
+      username,
+      text,
+      participant_id: participantID,
+      status,
+      created_at,
+    });
+    const stmt = db.prepare("INSERT INTO questions (id, username, text, participant_id, status, created_at) VALUES (?, ?, ?, ?, 'submitted', ?)");
+    stmt.run(id, username, text, participantID, created_at, (err) => {
       if (!err) {
         // Emit the updated list of all questions to moderators
         db.all("SELECT * FROM questions", [], (err, rows) => {
