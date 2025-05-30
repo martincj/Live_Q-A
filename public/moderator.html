@@ -55,7 +55,7 @@
     <label for="event-name">Event Name:</label>
     <input type="text" id="event-name" placeholder="Enter event name"><br><br>
 
-    <label for="URL-field">URL</label>
+    <label for="URL-field">URL:</label>
     <input type="text" id="URL-field" placeholder="Example: 01.02.03.04"><br><br>
 
     <label for="event-datetime">Event Date and Time:</label>
@@ -203,14 +203,37 @@
 
     // Save Event Configuration
     function saveEventConfig() {
+      const modeventName = document.getElementById('event-name').value;
+      const modeventURL = document.getElementById('URL-field').value;
+      const modeventDatetime = document.getElementById('event-datetime').value;
       const eventName = document.getElementById('event-name').value;
       const eventURL = document.getElementById('URL-field').value;
       const eventDatetime = document.getElementById('event-datetime').value;
 
-      socket.emit('save_event_config', { eventName, eventURL, eventDatetime }); // Key: eventDatetime
+      // Emit the event to the server with the event configuration values
+      socket.emit('save_event_config', { eventName, eventURL, eventDatetime });
+
+      // Save values to localStorage
+      localStorage.setItem('modeventName', modeventName);
+      localStorage.setItem('modeventURL', modeventURL);
+      localStorage.setItem('modeventDatetime', modeventDatetime);
+
       alert('Event configuration saved!');
-      console.log('Updated information:', { eventName, eventURL, eventDatetime });
     }
+
+    function loadEventConfig() {
+      const modeventName = localStorage.getItem('modeventName') || 'Default Event Name';
+      const modeventURL = localStorage.getItem('modeventURL') || 'e.g. 10.10.20.20';
+      const modeventDatetime = localStorage.getItem('modeventDatetime') || '';
+
+      // Populate the fields with values from localStorage or default values
+      document.getElementById('event-name').value = modeventName;
+      document.getElementById('URL-field').value = modeventURL;
+      document.getElementById('event-datetime').value = modeventDatetime;
+    }
+
+    // Call loadEventConfig when the page loads
+    window.onload = loadEventConfig;
   </script>
 
   <!-- Toggle Archived Questions Button -->

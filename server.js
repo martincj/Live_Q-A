@@ -341,7 +341,7 @@ io.on('connection', (socket) => {
   socket.on('request_approved_questions', () => {
     db.all("SELECT * FROM questions WHERE status = 'approved'", [], (err, rows) => {
       if (!err) {
-        socket.emit('approved_questions', rows); // Send the updated list of approved questions
+        socket.emit('approved_questions', rows); // Send the updated list to the client
       }
     });
   });

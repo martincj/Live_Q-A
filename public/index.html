@@ -70,8 +70,12 @@
         participantID = generateParticipantID();
         localStorage.setItem('participantID', participantID);
 
-        // Delete previous list of voted question from localStorage
+        // Delete previous list of voted questions from localStorage
         localStorage.removeItem('votedQuestions');
+        votedQuestions.clear(); // Clear the Set in memory
+
+        // Request the updated list of questions from the server
+        socket.emit('request_approved_questions');
       }
 
       // Update the title in the participant view
@@ -82,7 +86,6 @@
     socket.on('event_datetime_updated', ({ eventDatetime }) => {
       // Check if the eventDatetime has changed
       if (storedEventDatetime !== eventDatetime) {
-        console.log('Updating eventDatetime in localStorage:', eventDatetime); // Debugging
         storedEventDatetime = eventDatetime;
         localStorage.setItem('eventDatetime', eventDatetime);
 
@@ -90,8 +93,12 @@
         participantID = generateParticipantID();
         localStorage.setItem('participantID', participantID);
 
-        // Delete previous list of voted question from localStorage
+        // Delete previous list of voted questions from localStorage
         localStorage.removeItem('votedQuestions');
+        votedQuestions.clear(); // Clear the Set in memory
+
+        // Request the updated list of questions from the server
+        socket.emit('request_approved_questions');
       }
     });
 
@@ -115,7 +122,7 @@
 
     // Listen for approved questions from the server
     socket.on('approved_questions', (questions) => {
-      updateQuestionList(questions);
+      updateQuestionList(questions); // Refresh the question list
     });
 
     socket.on('question_upvoted', (questions) => {
@@ -155,10 +162,6 @@
         const div = document.createElement('div');
         div.className = 'question';
         div.setAttribute('data-id', q.id); // Add a unique identifier for the question
-
-        // Debugging: Log the participant IDs being compared
-        console.log('Question participantID:', q.participant_id);
-        console.log('LocalStorage participantID:', localStorage.getItem('participantID'));
 
         div.innerHTML = `
           <span>${q.text} | <span class="vote-count">Votes: ${q.upvotes}</span></span>
