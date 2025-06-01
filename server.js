@@ -5,6 +5,7 @@ const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const sqlite3 = require('sqlite3').verbose();
 const os = require('os'); // Added os module
+const SERVER_IP = process.env.SERVER_IP || 'localhost'; // Default to localhost if not provided
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -384,6 +385,9 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0'; // Bind to all interfaces
+
+server.listen(PORT, HOST, () => {
+  console.log(`Server running at http://${HOST}:${PORT}`);
 });

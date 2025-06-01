@@ -11,3 +11,4 @@ services:
       - /DATA/AppData/VBC_LiveQA/LiveQA_DB/questions.db:/app/questions.db # Persist the SQLite database
     environment:
       - MODERATOR_PASSWORD=mod123 # Pass environment
+      - SERVER_IP=10.10.100.40 # Set the server IP address

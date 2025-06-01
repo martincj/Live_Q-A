@@ -95,7 +95,7 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
+    const socket = io('http://10.10.100.40:3000');
     const eventTitle = document.getElementById('event-title');
 
     // Function to generate a new participant ID

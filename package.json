@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js"
   },
-  "author": "Your Name",
+  "author": "Chris Martin",
   "license": "MIT",
   "dependencies": {
     "express": "^4.21.2",

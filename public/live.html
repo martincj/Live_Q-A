@@ -54,7 +54,7 @@
   <script src="/AdditionalLibraries/qrcode.js"></script>
   <script>
     // Test for Connection
-    const socket = io('http://localhost:3000'); // Replace 3000 with your server's port
+    const socket = io('http://10.10.100.40:3000'); // Replace 3000 with your server's port
     socket.on('connect', () => {
       console.log('Connected to server:', socket.id);
     });
