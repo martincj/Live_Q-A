@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   VBC_LiveQA:
     build: .
@@ -10,9 +8,6 @@ services:
       - liveqa_data:/app/database
     environment:
       - MODERATOR_PASSWORD=mod123 # Pass environment
-
-volumes:
-  liveqa_data:
 
 volumes:
   liveqa_data:
