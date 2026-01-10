@@ -156,6 +156,7 @@
       if (storedEventDatetime !== eventDatetime) {
         storedEventDatetime = eventDatetime;
         localStorage.setItem('eventDatetime', eventDatetime);
+        eventTitle.textContent = storedEventName;
 
         // Generate a new participant ID if the eventDatetime changes
         participantID = generateParticipantID();
