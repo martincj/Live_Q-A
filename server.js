@@ -140,7 +140,7 @@ io.on('connection', (socket) => {
     stmt.run(id, username, text, participantID, created_at, (err) => {
       if (!err) {
         // Emit the updated list of all questions to moderators
-        db.all("SELECT * FROM questions", [], (err, rows) => {
+        getSortedQuestions('recency', (err, rows) => {
           if (!err) io.to('moderators').emit('all_questions', rows);
         });
       }
@@ -151,7 +151,7 @@ io.on('connection', (socket) => {
   socket.on('join_moderator', (password) => {
     if (password !== MODERATOR_PASSWORD) return;
     socket.join('moderators');
-    db.all("SELECT * FROM questions", [], (err, rows) => {
+    getSortedQuestions('recency', (err, rows) => {
       if (!err) socket.emit('all_questions', rows);
     });
   });
@@ -159,7 +159,7 @@ io.on('connection', (socket) => {
   socket.on('moderator_login', (password) => {
     if (password !== MODERATOR_PASSWORD) return;
     socket.join('moderators');
-    db.all("SELECT * FROM questions", [], (err, rows) => {
+    getSortedQuestions('recency', (err, rows) => {
       if (!err) socket.emit('all_questions', rows);
     });
   });
