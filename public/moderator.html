@@ -89,8 +89,8 @@
     <label for="event-name">Event Name:</label>
     <input type="text" id="event-name" placeholder="Enter event name"><br><br>
 
-    <label for="URL-field">URL:</label>
-    <input type="text" id="URL-field" placeholder="Example: 01.02.03.04"><br><br>
+    <label for="event-url-field">URL:</label>
+    <input type="text" id="event-url-field" placeholder="Example: 01.02.03.04"><br><br>
 
     <label for="event-datetime">Event Date and Time:</label>
     <input type="datetime-local" id="event-datetime" placeholder="Select event date and time"><br><br>
@@ -240,10 +240,10 @@
     // Save Event Configuration
     function saveEventConfig() {
       const modeventName = document.getElementById('event-name').value;
-      const modeventURL = document.getElementById('URL-field').value;
+      const moderatorEventURL = document.getElementById('event-url-field').value;
       const modeventDatetime = document.getElementById('event-datetime').value;
       const eventName = document.getElementById('event-name').value;
-      const eventURL = document.getElementById('URL-field').value;
+      const eventURL = document.getElementById('event-url-field').value;
       const eventDatetime = document.getElementById('event-datetime').value;
 
       // Emit the event to the server with the event configuration values
@@ -251,7 +251,7 @@
 
       // Save values to localStorage
       localStorage.setItem('modeventName', modeventName);
-      localStorage.setItem('modeventURL', modeventURL);
+      localStorage.setItem('modeventURL', moderatorEventURL);
       localStorage.setItem('modeventDatetime', modeventDatetime);
 
       alert('Event configuration saved!');
@@ -259,12 +259,11 @@
 
     function loadEventConfig() {
       const modeventName = localStorage.getItem('modeventName') || 'VBC Live Event';
-      const modeventURL = localStorage.getItem('modeventURL') || 'e.g. 10.10.20.20';
+      const moderatorEventURL = localStorage.getItem('moderatorEventURL') || 'e.g. 10.10.20.20';
       const modeventDatetime = localStorage.getItem('modeventDatetime') || '';
-
       // Populate the fields with values from localStorage or default values
       document.getElementById('event-name').value = modeventName;
-      document.getElementById('URL-field').value = modeventURL;
+      document.getElementById('event-url-field').value = moderatorEventURL;
       document.getElementById('event-datetime').value = modeventDatetime;
     }
 

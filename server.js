@@ -354,7 +354,7 @@ io.on('connection', (socket) => {
     currentEventDatetime = eventDatetime; // Update the stored event datetime
     console.log('Event updated:', eventName, eventURL, eventDatetime);
     io.emit('event_name_updated', { eventName });
-    io.emit('event_ip_updated', { eventURL });
+    io.emit('event_url_updated', { eventURL });
     io.emit('event_datetime_updated', { eventDatetime });
   });
 
