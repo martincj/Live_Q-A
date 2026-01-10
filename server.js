@@ -141,6 +141,10 @@ app.get('/moderator', (req, res) => {
   }
 });
 
+app.get('/presenter', (req, res) => {
+  res.sendFile(__dirname + '/public/presenter.html');
+});
+
 // Use the session middleware with Socket.IO
 io.engine.use(sessionMiddleware);
 
@@ -165,16 +169,16 @@ io.on('connection', (socket) => {
   db.all("SELECT * FROM questions WHERE status = 'approved'", [], (err, rows) => {
     if (!err) {
       console.log('Questions retrieved from database:', rows);
-      socket.emit('approved_questions', rows);
+      io.emit('approved_questions', rows);
     } else {
       console.error('Error retrieving questions:', err.message);
     }
   });
   db.get("SELECT * FROM questions WHERE status = 'live'", [], (err, row) => {
-    if (!err) socket.emit('live_question', row);
+    if (!err) io.emit('live_question', row);
   });
   db.get("SELECT * FROM questions WHERE status = 'next_up'", [], (err, row) => {
-    if (!err) socket.emit('next_up_question', row);
+    if (!err) io.emit('next_up_question', row);
   });
 
   let submittedQuestionIds = new Set();

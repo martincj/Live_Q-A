@@ -1,0 +1,28 @@
+body {
+    font-family: sans-serif;
+    background: linear-gradient(to right, #0F181B, #0D2734);
+    color: #D7E5D9;
+    margin: 0;
+    padding: 20px;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 20px;
+    height: calc(100vh - 40px);
+}
+
+.grid-item {
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 5px;
+    overflow-y: auto;
+}
+
+#timer-content {
+    font-size: 5rem;
+    text-align: center;
+    margin-top: 20%;
+}
