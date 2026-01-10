@@ -78,6 +78,11 @@
       color: #666;
       margin-top: 5px; /* Add spacing between the question text and the date */
     }
+    .timestamp {
+      font-size: 0.8em;
+      color: #aaa;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -167,6 +172,7 @@
         div.innerHTML = `
           <div class="question-text">${q.text} | <span class="vote-count">Votes: ${q.upvotes}</span></div>
           <div class="username">Submitted by: ${q.username}</div>
+          <div class="timestamp">Submitted on: ${new Date(q.created_at).toLocaleString()}</div>
           ${buttons}
         `;
         container.appendChild(div);
