@@ -145,7 +145,7 @@
     });
 
     // Listen for event URL updates and save to localStorage
-    socket.on('event_ip_updated', ({ eventURL }) => {
+    socket.on('event_url_updated', ({ eventURL }) => {
       currentEventURL = eventURL; // Store the raw URL
       eventUrl.textContent = `To submit questions, please visit ${eventURL}`; // Update the DOM with the concatenated string
       localStorage.setItem('live_eventIP', currentEventURL); // Save the raw URL to localStorage
