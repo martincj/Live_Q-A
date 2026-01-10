@@ -237,10 +237,10 @@
                 ? `<button onclick="unapprove('${q.id}')">Unapprove</button>` 
                 : `<button onclick="approve('${q.id}')">Approve</button>`}
               <button onclick="delete_question('${q.id}')">Delete</button>
-              ${q.status !== 'live' && q.status !== 'approved' 
+              ${q.status !== 'live' && q.status !== 'next_up'
                 ? `<button onclick="editQuestion('${q.id}')">Edit</button>` 
                 : ''}
-              ${q.status !== 'live' && q.status !== 'approved'
+              ${q.status === 'submitted' || q.status === 'approved'
                 ? `<button onclick="markAsNextUp('${q.id}')">Next Up</button>`
                 : ''}
             </div>
