@@ -143,10 +143,6 @@
     const socket = io();
     let currentSort = 'recency'; // Default sort order
 
-    // Authenticate moderator
-    const password = prompt("Enter moderator password:");
-    socket.emit('moderator_login', password);
-
     // Listen for all questions and update the list
     socket.on('all_questions', (questions) => {
       updateQuestionList(questions);
@@ -231,33 +227,33 @@
 
     // Mark a question as live
     function markAsLive(id) {
-      socket.emit('moderator_action', { id, action: 'live', password, sortBy: currentSort });
+      socket.emit('moderator_action', { id, action: 'live', sortBy: currentSort });
     }
 
     // Cancel live status
     function cancelLive(id) {
-      socket.emit('moderator_action', { id, action: 'cancel_live', password, sortBy: currentSort });
+      socket.emit('moderator_action', { id, action: 'cancel_live', sortBy: currentSort });
     }
 
     // Approve a question
     function approve(id) {
-      socket.emit('moderator_action', { id, action: 'approved', password, sortBy: currentSort });
+      socket.emit('moderator_action', { id, action: 'approved', sortBy: currentSort });
     }
 
     // Unapprove a question
     function unapprove(id) {
-      socket.emit('moderator_action', { id, action: 'unapprove', password, sortBy: currentSort });
+      socket.emit('moderator_action', { id, action: 'unapprove', sortBy: currentSort });
     }
 
     // delete a question
     function delete_question(id) {
-      socket.emit('moderator_action', { id, action: 'questiondeleted', password, sortBy: currentSort });
+      socket.emit('moderator_action', { id, action: 'questiondeleted', sortBy: currentSort });
     }
 
     // Archive a question
     function archive_question(id) {
-      socket.emit('moderator_action', { id, action: 'cancel_live', password, sortBy: currentSort });
-      socket.emit('moderator_action', { id, action: 'archive', password, sortBy: currentSort });
+      socket.emit('moderator_action', { id, action: 'cancel_live', sortBy: currentSort });
+      socket.emit('moderator_action', { id, action: 'archive', sortBy: currentSort });
     }
 
     // Change the sort order
@@ -423,7 +419,7 @@
     });
 
     function unarchiveQuestion(id) {
-      socket.emit('moderator_action', { id, action: 'unarchive', password, sortBy: currentSort });
+      socket.emit('moderator_action', { id, action: 'unarchive', sortBy: currentSort });
     }
 
     // Function to enable editing of a question
@@ -462,7 +458,7 @@
 
     // Function to save the edited question
     function saveEditedQuestion(id, newText) {
-      socket.emit('moderator_action', { id, action: 'edit', newText, password, sortBy: currentSort });
+      socket.emit('moderator_action', { id, action: 'edit', newText, sortBy: currentSort });
     }
 
     // Function to cancel editing a question
