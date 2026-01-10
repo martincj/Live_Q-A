@@ -1,8 +1,8 @@
-# 🟢 Live Q&A Web App
+# Live Q&A Web App
 
 A self-hostable, real-time web app for running live Q&A sessions with moderator control and participant voting.
 
-## ✨ Features
+## Features
 
 - Participants can:
   - Submit questions anonymously or with a username
@@ -20,12 +20,12 @@ A self-hostable, real-time web app for running live Q&A sessions with moderator 
 - SQLite persistence
 - Easy Docker-based deployment
 
-## 📦 Requirements
+## Requirements
 
 - Docker
 - Docker Compose
 
-## 🚀 Quick Start
+## Quick Start
 
 1. **Clone the repo**:
    ```bash
