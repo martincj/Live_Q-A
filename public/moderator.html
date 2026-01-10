@@ -55,12 +55,12 @@
     }  
     .live {
       color:#0F181B;
-      background-color: lightgreen; /* Changed to green */
+      background-color: lightgreen;
     }
 
     .next-up {
       color:#0F181B;
-      background-color: yellow; /* New style for next up questions */
+      background-color: yellow;
     }
 
     .approved {
@@ -119,6 +119,23 @@
 <body>
   <h1>Moderator Panel</h1>
   <button onclick="window.location.href='/moderator_logout'">Logoff</button>
+  <button id="configure-event-button" onclick="toggleConfigureEvent()">Configure Event</button>
+
+  <div id="configure-event" style="display: none; margin-top: 20px; border: 1px solid #ccc; padding: 10px;">
+    <h3>Event Configuration</h3>
+    <label for="event-name">Event Name:</label>
+    <input type="text" id="event-name" placeholder="Enter event name"><br><br>
+
+    <label for="event-url-field">URL:</label>
+    <input type="text" id="event-url-field" placeholder="Example: 01.02.03.04"><br><br>
+
+    <label for="event-datetime">Event Date and Time:</label>
+    <input type="datetime-local" id="event-datetime" placeholder="Select event date and time"><br><br>
+
+    <button onclick="saveEventConfig()">Update</button>
+  </div>
+
+  <!-- Top panel for sorting and live question -->
   <div id="top-panel">
     <!-- Add sorting buttons -->
     <div id="sorting-controls">
