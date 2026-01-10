@@ -166,7 +166,7 @@ io.on('connection', (socket) => {
   const networkIP = getLocalNetworkIP();
   socket.emit('network_ip', networkIP);
 
-  db.all("SELECT * FROM questions WHERE status = 'approved'", [], (err, rows) => {
+  db.all("SELECT * FROM questions WHERE status = 'approved' ORDER BY created_at DESC LIMIT 5", [], (err, rows) => {
     if (!err) {
       console.log('Questions retrieved from database:', rows);
       io.emit('approved_questions', rows);
@@ -353,7 +353,7 @@ io.on('connection', (socket) => {
       });
     }
 
-    db.all("SELECT * FROM questions WHERE status = 'approved'", [], (err, rows) => {
+    db.all("SELECT * FROM questions WHERE status = 'approved' ORDER BY created_at DESC LIMIT 5", [], (err, rows) => {
       if (!err) io.emit('approved_questions', rows);
     });
   });
