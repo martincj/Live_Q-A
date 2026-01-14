@@ -167,15 +167,14 @@ function broadcastTimerState() {
 
 
 function startTimer() {
-  if (!timerState.running) {
-    timerState.running = true;
-    timerState.seconds = 0;
-    timerState.interval = setInterval(() => {
-      timerState.seconds++;
-      broadcastTimerState();
-    }, 1000);
+  stopTimer();
+  timerState.running = true;
+  timerState.seconds = 0;
+  timerState.interval = setInterval(() => {
+    timerState.seconds++;
     broadcastTimerState();
-  }
+  }, 1000);
+  broadcastTimerState();
 }
 
 function stopTimer() {
