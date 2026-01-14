@@ -26,3 +26,39 @@ body {
     text-align: center;
     margin-top: 20%;
 }
+
+.timer-range {
+    font-size: 3rem;
+    margin: 10px 0;
+}
+
+.timer-range-large {
+    font-size: 6rem;
+    font-weight: bold;
+}
+
+.grey {
+    color: grey;
+}
+
+.green {
+    color: lightgreen;
+}
+
+.yellow {
+    color: yellow;
+}
+
+.red {
+    color: red;
+}
+
+.flashing {
+    animation: flash 1s infinite;
+}
+
+@keyframes flash {
+    0% { opacity: 1; }
+    50% { opacity: 0.1; }
+    100% { opacity: 1; }
+}

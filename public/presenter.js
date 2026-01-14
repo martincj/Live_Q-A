@@ -50,21 +50,42 @@ setInterval(fetchApprovedQuestions, 5000);
 // Initial fetch
 fetchApprovedQuestions();
 
+const timer03 = document.getElementById('timer-0-3');
+const timer35 = document.getElementById('timer-3-5');
+const timer5plus = document.getElementById('timer-5-plus');
+const timer10plus = document.getElementById('timer-10-plus');
+
 socket.on('timer_state', (state) => {
   timerSeconds = state.seconds;
-  updateTimerDisplay();
+  updateTimerDisplay(state.running);
 });
 
-function updateTimerDisplay() {
+function updateTimerDisplay(running) {
     const minutes = Math.floor(timerSeconds / 60);
-    const seconds = timerSeconds % 60;
-    timerContent.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-    if (timerSeconds < 120) {
-        timerContent.style.color = 'lightgreen';
-    } else if (timerSeconds < 300) {
-        timerContent.style.color = 'yellow';
-    } else {
-        timerContent.style.color = 'red';
+    // Reset all to grey
+    timer03.className = 'timer-range grey';
+    timer35.className = 'timer-range grey';
+    timer5plus.className = 'timer-range grey';
+
+    timer10plus.style.display = 'none';
+    timer03.style.display = 'block';
+    timer35.style.display = 'block';
+    timer5plus.style.display = 'block';
+
+    if (running) {
+        if (minutes < 3) {
+            timer03.className = 'timer-range green';
+        } else if (minutes < 5) {
+            timer35.className = 'timer-range yellow';
+        } else if (minutes < 10) {
+            timer5plus.className = 'timer-range red';
+        } else {
+            timer03.style.display = 'none';
+            timer35.style.display = 'none';
+            timer5plus.style.display = 'none';
+            timer10plus.style.display = 'block';
+            timer10plus.className = 'timer-range-large red flashing';
+        }
     }
 }
