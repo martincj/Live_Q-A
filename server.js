@@ -358,6 +358,14 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('get_approved_questions', () => {
+    db.all("SELECT * FROM questions WHERE status = 'approved' ORDER BY created_at DESC LIMIT 5", [], (err, rows) => {
+      if (!err) {
+        socket.emit('approved_questions', rows);
+      }
+    });
+  });
+
   socket.on('upvote', (questionId) => {
     db.get("SELECT * FROM questions WHERE id = ?", [questionId], (err, question) => {
       if (!err && question && question.status === 'approved') {

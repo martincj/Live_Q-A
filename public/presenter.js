@@ -34,13 +34,22 @@ socket.on('next_up_question', (question) => {
 
 socket.on('approved_questions', (questions) => {
     approvedQuestionsContent.innerHTML = '';
-    const recentQuestions = questions.slice(0, 5);
-    recentQuestions.forEach(q => {
+    questions.forEach(q => {
         const div = document.createElement('div');
         div.innerHTML = `<div>${q.text}</div><div>- ${q.username}</div><hr>`;
         approvedQuestionsContent.appendChild(div);
     });
 });
+
+function fetchApprovedQuestions() {
+    socket.emit('get_approved_questions');
+}
+
+// Fetch approved questions every 5 seconds
+setInterval(fetchApprovedQuestions, 5000);
+
+// Initial fetch
+fetchApprovedQuestions();
 
 function startTimer() {
     stopTimer();
