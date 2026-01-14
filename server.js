@@ -152,8 +152,52 @@ io.engine.use(sessionMiddleware);
 let currentEventName = 'VBC Event';
 let currentEventDatetime = '';
 
+let timerState = {
+  running: false,
+  seconds: 0,
+  interval: null,
+};
+
+function broadcastTimerState() {
+  io.emit('timer_state', {
+    seconds: timerState.seconds,
+    running: timerState.running,
+  });
+}
+
+
+function startTimer() {
+  if (!timerState.running) {
+    timerState.running = true;
+    timerState.seconds = 0;
+    timerState.interval = setInterval(() => {
+      timerState.seconds++;
+      broadcastTimerState();
+    }, 1000);
+    broadcastTimerState();
+  }
+}
+
+function stopTimer() {
+  if (timerState.running) {
+    timerState.running = false;
+    clearInterval(timerState.interval);
+    broadcastTimerState();
+  }
+}
+
 io.on('connection', (socket) => {
   console.log('a user connected:', socket.id);
+
+  // Send the current timer state to the newly connected client
+  socket.emit('timer_state', {
+    seconds: timerState.seconds,
+    running: timerState.running,
+  });
+
+  socket.on('start_timer', startTimer);
+  socket.on('stop_timer', stopTimer);
+
 
   // Check if the user is authenticated as a moderator
   if (socket.request.session.isAuthenticated) {
@@ -242,6 +286,7 @@ io.on('connection', (socket) => {
               io.emit('live_question', row);
               io.emit('next_up_question', null); // Clear the next up question
               emitAllQuestions();
+              startTimer();
             }
           });
         }
@@ -335,6 +380,7 @@ io.on('connection', (socket) => {
         if (!err) {
           emitAllQuestions();
           io.emit('live_question', null);
+          stopTimer();
         }
       });
     }
