@@ -3,7 +3,7 @@ services:
     build: .
     platform: linux/amd64
     ports:
-      - "4000:4000" # Map port 4000 on the host to port 4000 in the container
+      - "3000:3000" # Map port 3000 on the host to port 3000 in the container
     volumes:
       - liveqa_data:/app/database
     environment:
