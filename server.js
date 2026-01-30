@@ -1,16 +1,28 @@
-// Simple backend using Node.js, Express, and Socket.IO with SQLite and moderator password
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const sqlite3 = require('sqlite3').verbose();
-const os = require('os'); // Added os module
-const SERVER_IP = process.env.SERVER_IP || 'localhost'; // Default to localhost if not provided
+const os = require('os');
+const session = require('express-session');
+const bodyParser = require('body-parser');
+
+const SERVER_IP = process.env.SERVER_IP || 'localhost';
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const MODERATOR_PASSWORD = process.env.MODERATOR_PASSWORD || 'mod123';
 
+// Configure session middleware
+const sessionMiddleware = session({
+  secret: 'your_secret_key', // Replace with a strong, random secret key
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Set to true if using HTTPS
+});
+
+app.use(sessionMiddleware);
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
 
@@ -43,6 +55,18 @@ db.serialize(() => {
   )`);
 });
 
+// Function to get sorted questions
+function getSortedQuestions(sortBy, callback) {
+  let orderByClause = 'created_at DESC'; // Default: sort by recency
+  if (sortBy === 'votes') {
+    orderByClause = 'upvotes DESC';
+  } else if (sortBy === 'approved') {
+    orderByClause = "CASE WHEN status = 'approved' THEN 1 ELSE 2 END, created_at DESC";
+  }
+
+  db.all(`SELECT * FROM questions ORDER BY ${orderByClause}`, [], callback);
+}
+
 // Function to get the local network IP address
 function getLocalNetworkIP() {
   const interfaces = os.networkInterfaces();
@@ -71,7 +95,7 @@ app.get('/questions', (req, res) => {
     if (err) {
       res.status(500).json({ error: 'Failed to fetch questions' });
     } else {
-      console.log('Questions retrieved from database:', rows); // debugging to verify that the participant_id is included in the rows arrage retriecved from the database
+      console.log('Questions retrieved from database:', rows);
       res.json(rows);
     }
   });
@@ -82,40 +106,130 @@ app.get('/live', (req, res) => {
   res.sendFile(__dirname + '/public/live.html');
 });
 
-// Add an endpoint to serve the live page
-app.get('/moderator', (req, res) => {
-  res.sendFile(__dirname + '/public/moderator.html');
+// Moderator login page
+app.get('/moderator_login', (req, res) => {
+  res.sendFile(__dirname + '/public/moderator_login.html');
 });
 
+// Handle moderator login
+app.post('/moderator_login', (req, res) => {
+  const { password } = req.body;
+  if (password === MODERATOR_PASSWORD) {
+    req.session.isAuthenticated = true;
+    res.redirect('/moderator');
+  } else {
+    res.redirect('/moderator_login?error=1');
+  }
+});
+
+// Logout route
+app.get('/moderator_logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      return res.redirect('/moderator');
+    }
+    res.redirect('/moderator_login');
+  });
+});
+
+// Protect the moderator route
+app.get('/moderator', (req, res) => {
+  if (req.session.isAuthenticated) {
+    res.sendFile(__dirname + '/public/moderator.html');
+  } else {
+    res.redirect('/moderator_login');
+  }
+});
+
+app.get('/presenter', (req, res) => {
+  res.sendFile(__dirname + '/public/presenter.html');
+});
+
+// Use the session middleware with Socket.IO
+io.engine.use(sessionMiddleware);
+
 // WebSocket logic
-let currentEventName = 'VBC Event'; // Store the event name in memory
-let currentEventDatetime = ''; // Store the event datetime in memory
+let currentEventName = 'VBC Event';
+let currentEventDatetime = '';
+
+let timerState = {
+  running: false,
+  seconds: 0,
+  interval: null,
+};
+
+function broadcastTimerState() {
+  io.emit('timer_state', {
+    seconds: timerState.seconds,
+    running: timerState.running,
+  });
+}
+
+
+function startTimer() {
+  stopTimer();
+  timerState.running = true;
+  timerState.seconds = 0;
+  timerState.interval = setInterval(() => {
+    timerState.seconds++;
+    broadcastTimerState();
+  }, 1000);
+  broadcastTimerState();
+}
+
+function stopTimer() {
+  if (timerState.running) {
+    timerState.running = false;
+    clearInterval(timerState.interval);
+    broadcastTimerState();
+  }
+}
 
 io.on('connection', (socket) => {
   console.log('a user connected:', socket.id);
 
-  const networkIP = getLocalNetworkIP(); // Get the local network IP
-  socket.emit('network_ip', networkIP); // Emit the network IP to the client
+  // Send the current timer state to the newly connected client
+  socket.emit('timer_state', {
+    seconds: timerState.seconds,
+    running: timerState.running,
+  });
 
-  db.all("SELECT * FROM questions WHERE status = 'approved'", [], (err, rows) => {
+  socket.on('start_timer', startTimer);
+  socket.on('stop_timer', stopTimer);
+
+
+  // Check if the user is authenticated as a moderator
+  if (socket.request.session.isAuthenticated) {
+    socket.join('moderators');
+    getSortedQuestions('recency', (err, rows) => {
+      if (!err) socket.emit('all_questions', rows);
+    });
+  }
+
+  const networkIP = getLocalNetworkIP();
+  socket.emit('network_ip', networkIP);
+
+  db.all("SELECT * FROM questions WHERE status = 'approved' ORDER BY created_at DESC LIMIT 5", [], (err, rows) => {
     if (!err) {
-      console.log('Questions retrieved from database:', rows); // Debugging
-      socket.emit('approved_questions', rows); // Send the questions to the client
+      console.log('Questions retrieved from database:', rows);
+      io.emit('approved_questions', rows);
     } else {
       console.error('Error retrieving questions:', err.message);
     }
   });
   db.get("SELECT * FROM questions WHERE status = 'live'", [], (err, row) => {
-    if (!err) socket.emit('live_question', row);
+    if (!err) io.emit('live_question', row);
+  });
+  db.get("SELECT * FROM questions WHERE status = 'next_up'", [], (err, row) => {
+    if (!err) io.emit('next_up_question', row);
   });
 
   let submittedQuestionIds = new Set();
 
   socket.on('submit_question', ({ username, text, participantID }) => {
-    const id = uuidv4(); // Generate a unique ID for the question
+    const id = uuidv4();
     const created_at = Date.now();
-    const status = 'submitted'; // Define the status for clarity
-      // Log the details of the submitted question
+    const status = 'submitted';
     console.log('New Question Submitted:', {
       id,
       username,
@@ -127,8 +241,7 @@ io.on('connection', (socket) => {
     const stmt = db.prepare("INSERT INTO questions (id, username, text, participant_id, status, created_at) VALUES (?, ?, ?, ?, 'submitted', ?)");
     stmt.run(id, username, text, participantID, created_at, (err) => {
       if (!err) {
-        // Emit the updated list of all questions to moderators
-        db.all("SELECT * FROM questions", [], (err, rows) => {
+        getSortedQuestions('recency', (err, rows) => {
           if (!err) io.to('moderators').emit('all_questions', rows);
         });
       }
@@ -136,32 +249,21 @@ io.on('connection', (socket) => {
     stmt.finalize();
   });
 
-  socket.on('join_moderator', (password) => {
-    if (password !== MODERATOR_PASSWORD) return;
-    socket.join('moderators');
-    db.all("SELECT * FROM questions", [], (err, rows) => {
-      if (!err) socket.emit('all_questions', rows);
-    });
-  });
+  socket.on('moderator_action', ({ id, action, sortBy, newText }) => {
+    if (!socket.request.session.isAuthenticated) return;
 
-  socket.on('moderator_login', (password) => {
-    if (password !== MODERATOR_PASSWORD) return;
-    socket.join('moderators');
-    db.all("SELECT * FROM questions", [], (err, rows) => {
-      if (!err) socket.emit('all_questions', rows);
-    });
-  });
-
-  socket.on('moderator_action', ({ id, action, password }) => {
-    if (password !== MODERATOR_PASSWORD) return;
+    const emitAllQuestions = () => {
+      getSortedQuestions(sortBy, (err, rows) => {
+        if (!err) {
+          io.to('moderators').emit('all_questions', rows);
+        }
+      });
+    };
 
     if (action === 'questiondeleted') {
       db.run("DELETE FROM questions WHERE id = ?", [id], (err) => {
         if (!err) {
-          // Emit the updated list of all questions to moderators
-          db.all("SELECT * FROM questions", [], (err, rows) => {
-            if (!err) io.emit('all_questions', rows);
-          });
+          emitAllQuestions();
         }
       });
     }
@@ -169,10 +271,7 @@ io.on('connection', (socket) => {
     else if (action === 'approved') {
       db.run("UPDATE questions SET status = 'approved' WHERE id = ?", [id], (err) => {
         if (!err) {
-          // Emit the updated list of all questions to moderators
-          db.all("SELECT * FROM questions", [], (err, rows) => {
-            if (!err) io.to('moderators').emit('all_questions', rows);
-          });
+          emitAllQuestions();
         }
       });
     }
@@ -183,22 +282,44 @@ io.on('connection', (socket) => {
         if (!err) {
           db.get("SELECT * FROM questions WHERE id = ?", [id], (err, row) => {
             if (!err) {
-              io.emit('live_question', row); // Emit the live question to all clients
+              io.emit('live_question', row);
+              io.emit('next_up_question', null); // Clear the next up question
+              emitAllQuestions();
+              startTimer();
+            }
+          });
+        }
+      });
+    }
 
-              // Fetch the updated list of all questions
-              db.all("SELECT * FROM questions", [], (err, rows) => {
+    else if (action === 'next_up') {
+      // Clear any existing next_up question
+      db.run("UPDATE questions SET status = 'submitted' WHERE status = 'next_up'", [], (err) => {
+        if (!err) {
+          db.run("UPDATE questions SET status = 'next_up' WHERE id = ?", [id], function (err) {
+            if (!err) {
+              db.get("SELECT * FROM questions WHERE id = ?", [id], (err, row) => {
                 if (!err) {
-                  io.to('moderators').emit('all_questions', rows); // Emit the updated list of all questions to moderators
+                  io.emit('next_up_question', row);
+                  emitAllQuestions();
                 }
               });
             }
           });
         }
       });
-    } 
+    }
+
+    else if (action === 'cancel_next_up') {
+      db.run("UPDATE questions SET status = 'submitted' WHERE id = ?", [id], (err) => {
+        if (!err) {
+          io.emit('next_up_question', null);
+          emitAllQuestions();
+        }
+      });
+    }
     
     else if (action === 'archive') {
-      // Move the question to the archived_questions table
       db.get("SELECT * FROM questions WHERE id = ?", [id], (err, question) => {
         if (!err && question) {
           const archivedAt = Date.now();
@@ -207,14 +328,9 @@ io.on('connection', (socket) => {
             [question.id, question.username, question.text, question.status, question.upvotes, archivedAt],
             (err) => {
               if (!err) {
-                // Delete the question from the questions table
                 db.run("DELETE FROM questions WHERE id = ?", [id], (err) => {
                   if (!err) {
-                    // Emit the updated list of all questions to moderators
-                    db.all("SELECT * FROM questions", [], (err, rows) => {
-                      if (!err) io.to('moderators').emit('all_questions', rows);
-                    });
-                    // Emit the updated list of archived questions
+                    emitAllQuestions();
                     db.all("SELECT * FROM archived_questions", [], (err, rows) => {
                       if (!err) socket.emit('archived_questions', rows);
                     });
@@ -227,27 +343,20 @@ io.on('connection', (socket) => {
       });
     } 
     else if (action === 'unarchive') {
-      // Fetch the question from the archived_questions table
       db.get("SELECT * FROM archived_questions WHERE id = ?", [id], (err, question) => {
         if (!err && question) {
-          // Insert the question back into the questions table
           db.run(
             `INSERT INTO questions (id, username, text, status, upvotes, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
             [question.id, question.username, question.text, 'submitted', question.upvotes, Date.now()],
             (err) => {
               if (!err) {
-                // Delete the question from the archived_questions table
                 db.run("DELETE FROM archived_questions WHERE id = ?", [id], (err) => {
                   if (!err) {
-                    // Emit the updated archived questions list
                     db.all("SELECT * FROM archived_questions", [], (err, rows) => {
                       if (!err) socket.emit('archived_questions', rows);
                     });
   
-                    // Emit the updated all questions list to moderators
-                    db.all("SELECT * FROM questions", [], (err, rows) => {
-                      if (!err) io.to('moderators').emit('all_questions', rows);
-                    });
+                    emitAllQuestions();
                   }
                 });
               }
@@ -260,10 +369,7 @@ io.on('connection', (socket) => {
     else if (action === 'unapprove') {
       db.run("UPDATE questions SET status = 'submitted' WHERE id = ?", [id], (err) => {
         if (!err) {
-          // Emit the updated list of all questions to moderators
-          db.all("SELECT * FROM questions", [], (err, rows) => {
-            if (!err) io.to('moderators').emit('all_questions', rows);
-          });
+          emitAllQuestions();
         }
       });
     }
@@ -271,40 +377,51 @@ io.on('connection', (socket) => {
     else if (action === 'cancel_live') {
       db.run("UPDATE questions SET status = 'approved' WHERE id = ?", [id], (err) => {
         if (!err) {
-          // Emit the updated list of all questions to moderators
-          db.all("SELECT * FROM questions", [], (err, rows) => {
-            if (!err) io.to('moderators').emit('all_questions', rows);
-          });
-
-          // Notify the live view that there is no active live question
+          emitAllQuestions();
           io.emit('live_question', null);
+          stopTimer();
         }
       });
     }
-    
+    else if (action === 'edit') {
+      db.run("UPDATE questions SET text = ? WHERE id = ?", [newText, id], (err) => {
+        if (!err) {
+          emitAllQuestions();
+        }
+      });
+    }
     else {
-      db.run("UPDATE questions SET status = ? WHERE id = ?", [action, id]);
+      db.run("UPDATE questions SET status = ? WHERE id = ?", [action, id], (err) => {
+        if (!err) {
+          emitAllQuestions();
+        }
+      });
     }
 
-    // Emit the updated list of approved questions
-    db.all("SELECT * FROM questions WHERE status = 'approved'", [], (err, rows) => {
+    db.all("SELECT * FROM questions WHERE status = 'approved' ORDER BY created_at DESC LIMIT 5", [], (err, rows) => {
       if (!err) io.emit('approved_questions', rows);
     });
   });
 
+  socket.on('get_approved_questions', () => {
+    db.all("SELECT * FROM questions WHERE status = 'approved' ORDER BY created_at DESC LIMIT 5", [], (err, rows) => {
+      if (!err) {
+        socket.emit('approved_questions', rows);
+      }
+    });
+  });
+
   socket.on('upvote', (questionId) => {
-    // Prevent upvoting own question or multiple votes
     db.get("SELECT * FROM questions WHERE id = ?", [questionId], (err, question) => {
       if (!err && question && question.status === 'approved') {
         db.get("SELECT * FROM votes WHERE question_id = ? AND socket_id = ?", [questionId, socket.id], (err, row) => {
           if (!row) {
             db.run("INSERT INTO votes (question_id, socket_id) VALUES (?, ?)", [questionId, socket.id], () => {
               db.run("UPDATE questions SET upvotes = upvotes + 1 WHERE id = ?", [questionId], () => {
-                // Emit the updated question to participants
                 db.get("SELECT * FROM questions WHERE id = ?", [questionId], (err, updatedQuestion) => {
                   if (!err) {
-                    io.emit('question_upvoted', [updatedQuestion]); // Send updated question to participants
-                    io.to('moderators').emit('update_vote', updatedQuestion); // Send updated question to moderators
+                    io.emit('question_upvoted', [updatedQuestion]);
+                    io.to('moderators').emit('update_vote', updatedQuestion);
                   }
                 });
               });
@@ -316,21 +433,13 @@ io.on('connection', (socket) => {
   });
 
   socket.on('request_questions', ({ sortBy }) => {
-    let orderByClause = 'created_at DESC'; // Default: sort by recency
-    if (sortBy === 'votes') {
-      orderByClause = 'upvotes DESC';
-    } else if (sortBy === 'approved') {
-      orderByClause = "CASE WHEN status = 'approved' THEN 1 ELSE 2 END, created_at DESC";
-    }
-
-    db.all(`SELECT * FROM questions ORDER BY ${orderByClause}`, [], (err, rows) => {
+    getSortedQuestions(sortBy, (err, rows) => {
       if (!err) {
-        socket.emit('all_questions', rows); // Send the sorted questions back to the client
+        socket.emit('all_questions', rows);
       }
     });
   });
 
-  // display archived questions to moderators when button is clicked
   socket.on('request_archived_questions', () => {
     db.all("SELECT * FROM archived_questions", [], (err, rows) => {
       if (!err) {
@@ -342,23 +451,21 @@ io.on('connection', (socket) => {
   socket.on('request_approved_questions', () => {
     db.all("SELECT * FROM questions WHERE status = 'approved'", [], (err, rows) => {
       if (!err) {
-        socket.emit('approved_questions', rows); // Send the updated list to the client
+        socket.emit('approved_questions', rows);
       }
     });
   });
 
-  // Send notifications of updates when an update event button is clicked.
-  socket.on('save_event_config', ({ eventName, eventURL, eventDatetime }) => { // Key: eventDatetime
-    console.log('Received eventDatetime from moderator:', eventDatetime); // Debugging
-    currentEventName = eventName; // Update the stored event name
-    currentEventDatetime = eventDatetime; // Update the stored event datetime
+  socket.on('save_event_config', ({ eventName, eventURL, eventDatetime }) => {
+    console.log('Received eventDatetime from moderator:', eventDatetime);
+    currentEventName = eventName;
+    currentEventDatetime = eventDatetime;
     console.log('Event updated:', eventName, eventURL, eventDatetime);
     io.emit('event_name_updated', { eventName });
-    io.emit('event_ip_updated', { eventURL });
+    io.emit('event_url_updated', { eventURL });
     io.emit('event_datetime_updated', { eventDatetime });
   });
 
-  // Send the current event configuration to participants when they connect
   socket.emit('event_name_updated', { eventName: currentEventName });
   socket.emit('event_datetime_updated', { eventDatetime: currentEventDatetime });
 
@@ -378,7 +485,6 @@ io.on('connection', (socket) => {
           return;
         }
 
-        // Send the data back to the client
         socket.emit('export_data', { questions, archivedQuestions });
       });
     });
@@ -386,7 +492,7 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-const HOST = '0.0.0.0'; // Bind to all interfaces
+const HOST = '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);

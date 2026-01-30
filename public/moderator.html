@@ -55,6 +55,11 @@
     }  
     .live {
       color:#0F181B;
+      background-color: lightgreen;
+    }
+
+    .next-up {
+      color:#0F181B;
       background-color: yellow;
     }
 
@@ -78,10 +83,42 @@
       color: #666;
       margin-top: 5px; /* Add spacing between the question text and the date */
     }
+    .timestamp {
+      font-size: 0.8em;
+      color: #aaa;
+      margin-top: 5px;
+    }
+    #top-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    #sorting-controls {
+      flex-grow: 1;
+    }
+    #live-question-area {
+      flex-basis: 50%;
+      margin-left: 20px;
+      /* Removed border: 2px solid yellow; */
+      padding: 10px;
+      border-radius: 5px;
+    }
+    #live-question-area .question {
+      /* background-color: transparent; // Removed */
+      border: none;
+    }
+    #next-up-question-area {
+      flex-basis: 50%;
+      margin-left: 20px;
+      padding: 10px;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
   <h1>Moderator Panel</h1>
+  <button onclick="window.location.href='/moderator_logout'">Logoff</button>
   <button id="configure-event-button" onclick="toggleConfigureEvent()">Configure Event</button>
 
   <div id="configure-event" style="display: none; margin-top: 20px; border: 1px solid #ccc; padding: 10px;">
@@ -89,8 +126,8 @@
     <label for="event-name">Event Name:</label>
     <input type="text" id="event-name" placeholder="Enter event name"><br><br>
 
-    <label for="URL-field">URL:</label>
-    <input type="text" id="URL-field" placeholder="Example: 01.02.03.04"><br><br>
+    <label for="event-url-field">URL:</label>
+    <input type="text" id="event-url-field" placeholder="Example: 01.02.03.04"><br><br>
 
     <label for="event-datetime">Event Date and Time:</label>
     <input type="datetime-local" id="event-datetime" placeholder="Select event date and time"><br><br>
@@ -98,11 +135,18 @@
     <button onclick="saveEventConfig()">Update</button>
   </div>
 
-  <!-- Add sorting buttons -->
-  <div id="sorting-controls">
-    <button onclick="changeSort('recency')">Sort by Recency</button>
-    <button onclick="changeSort('approved')">Sort by Approved</button>
-    <button onclick="changeSort('votes')">Sort by Votes</button>
+  <!-- Top panel for sorting and live question -->
+  <div id="top-panel">
+    <!-- Add sorting buttons -->
+    <div id="sorting-controls">
+      <button onclick="changeSort('recency')">Sort by Recency</button>
+      <button onclick="changeSort('approved')">Sort by Approved</button>
+      <button onclick="changeSort('votes')">Sort by Votes</button>
+    </div>
+    <!-- Live question area -->
+    <div id="live-question-area"></div>
+    <!-- Next Up question area -->
+    <div id="next-up-question-area"></div>
   </div>
 
   <!-- Question list container -->
@@ -113,13 +157,49 @@
     const socket = io();
     let currentSort = 'recency'; // Default sort order
 
-    // Authenticate moderator
-    const password = prompt("Enter moderator password:");
-    socket.emit('moderator_login', password);
-
     // Listen for all questions and update the list
     socket.on('all_questions', (questions) => {
       updateQuestionList(questions);
+    });
+
+    socket.on('live_question', (question) => {
+      const liveQuestionArea = document.getElementById('live-question-area');
+      if (question) {
+        liveQuestionArea.innerHTML = `
+          <h3>Live Question</h3>
+          <div class="question live" data-id="${question.id}">
+            <div class="question-text">${question.text} | <span class="vote-count">Votes: ${question.upvotes}</span></div>
+            <div class="username">Submitted by: ${question.username}</div>
+            <div class="timestamp">Submitted on: ${new Date(question.created_at).toLocaleString()}</div>
+            <div class="buttons">
+              <button onclick="cancelLive('${question.id}')">Cancel</button>
+              <button onclick="archive_question('${question.id}')">Archive</button>
+            </div>
+          </div>
+        `;
+      } else {
+        liveQuestionArea.innerHTML = '';
+      }
+    });
+
+    socket.on('next_up_question', (question) => {
+      const nextUpQuestionArea = document.getElementById('next-up-question-area');
+      if (question) {
+        nextUpQuestionArea.innerHTML = `
+          <h3>Next Up</h3>
+          <div class="question next-up" data-id="${question.id}">
+            <div class="question-text">${question.text} | <span class="vote-count">Votes: ${question.upvotes}</span></div>
+            <div class="username">Submitted by: ${question.username}</div>
+            <div class="timestamp">Submitted on: ${new Date(question.created_at).toLocaleString()}</div>
+            <div class="buttons">
+              <button onclick="markAsLive('${question.id}')">Live</button>
+              <button onclick="cancelNextUp('${question.id}')">Cancel</button>
+            </div>
+          </div>
+        `;
+      } else {
+        nextUpQuestionArea.innerHTML = '';
+      }
     });
 
     // Update the question list based on the current sort order
@@ -127,7 +207,9 @@
       const container = document.getElementById('questions');
       container.innerHTML = '';
 
-      questions.forEach((q) => {
+      const nonLiveQuestions = questions.filter(q => q.status !== 'live' && q.status !== 'next_up');
+
+      nonLiveQuestions.forEach((q) => {
         const div = document.createElement('div');
         div.className = 'question';
         div.setAttribute('data-id', q.id); // Add a data-id attribute
@@ -141,6 +223,9 @@
         }
         if (q.status === 'approved') {
           div.classList.add('approved'); // Style approved questions
+        }
+        if (q.status === 'next_up') {
+          div.classList.add('next-up'); // Style next up questions
         }
 
         // Render buttons conditionally
@@ -160,6 +245,12 @@
                 ? `<button onclick="unapprove('${q.id}')">Unapprove</button>` 
                 : `<button onclick="approve('${q.id}')">Approve</button>`}
               <button onclick="delete_question('${q.id}')">Delete</button>
+              ${q.status !== 'live' && q.status !== 'next_up'
+                ? `<button onclick="editQuestion('${q.id}')">Edit</button>` 
+                : ''}
+              ${q.status === 'submitted' || q.status === 'approved'
+                ? `<button onclick="markAsNextUp('${q.id}')">Next Up</button>`
+                : ''}
             </div>
           `;
         }
@@ -167,6 +258,7 @@
         div.innerHTML = `
           <div class="question-text">${q.text} | <span class="vote-count">Votes: ${q.upvotes}</span></div>
           <div class="username">Submitted by: ${q.username}</div>
+          <div class="timestamp">Submitted on: ${new Date(q.created_at).toLocaleString()}</div>
           ${buttons}
         `;
         container.appendChild(div);
@@ -175,33 +267,43 @@
 
     // Mark a question as live
     function markAsLive(id) {
-      socket.emit('moderator_action', { id, action: 'live', password });
+      socket.emit('moderator_action', { id, action: 'live', sortBy: currentSort });
+    }
+
+    // Mark a question as next up
+    function markAsNextUp(id) {
+      socket.emit('moderator_action', { id, action: 'next_up', sortBy: currentSort });
+    }
+
+    // Cancel next up status
+    function cancelNextUp(id) {
+      socket.emit('moderator_action', { id, action: 'cancel_next_up', sortBy: currentSort });
     }
 
     // Cancel live status
     function cancelLive(id) {
-      socket.emit('moderator_action', { id, action: 'cancel_live', password });
+      socket.emit('moderator_action', { id, action: 'cancel_live', sortBy: currentSort });
     }
 
     // Approve a question
     function approve(id) {
-      socket.emit('moderator_action', { id, action: 'approved', password });
+      socket.emit('moderator_action', { id, action: 'approved', sortBy: currentSort });
     }
 
     // Unapprove a question
     function unapprove(id) {
-      socket.emit('moderator_action', { id, action: 'unapprove', password });
+      socket.emit('moderator_action', { id, action: 'unapprove', sortBy: currentSort });
     }
 
     // delete a question
     function delete_question(id) {
-      socket.emit('moderator_action', { id, action: 'questiondeleted', password });
+      socket.emit('moderator_action', { id, action: 'questiondeleted', sortBy: currentSort });
     }
 
     // Archive a question
     function archive_question(id) {
-      socket.emit('moderator_action', { id, action: 'cancel_live', password });
-      socket.emit('moderator_action', { id, action: 'archive', password });
+      socket.emit('moderator_action', { id, action: 'cancel_live', sortBy: currentSort });
+      socket.emit('moderator_action', { id, action: 'archive', sortBy: currentSort });
     }
 
     // Change the sort order
@@ -240,10 +342,10 @@
     // Save Event Configuration
     function saveEventConfig() {
       const modeventName = document.getElementById('event-name').value;
-      const modeventURL = document.getElementById('URL-field').value;
+      const moderatorEventURL = document.getElementById('event-url-field').value;
       const modeventDatetime = document.getElementById('event-datetime').value;
       const eventName = document.getElementById('event-name').value;
-      const eventURL = document.getElementById('URL-field').value;
+      const eventURL = document.getElementById('event-url-field').value;
       const eventDatetime = document.getElementById('event-datetime').value;
 
       // Emit the event to the server with the event configuration values
@@ -251,7 +353,7 @@
 
       // Save values to localStorage
       localStorage.setItem('modeventName', modeventName);
-      localStorage.setItem('modeventURL', modeventURL);
+      localStorage.setItem('modeventURL', moderatorEventURL);
       localStorage.setItem('modeventDatetime', modeventDatetime);
 
       alert('Event configuration saved!');
@@ -259,12 +361,11 @@
 
     function loadEventConfig() {
       const modeventName = localStorage.getItem('modeventName') || 'VBC Live Event';
-      const modeventURL = localStorage.getItem('modeventURL') || 'e.g. 10.10.20.20';
+      const moderatorEventURL = localStorage.getItem('moderatorEventURL') || 'e.g. 10.10.20.20';
       const modeventDatetime = localStorage.getItem('modeventDatetime') || '';
-
       // Populate the fields with values from localStorage or default values
       document.getElementById('event-name').value = modeventName;
-      document.getElementById('URL-field').value = modeventURL;
+      document.getElementById('event-url-field').value = moderatorEventURL;
       document.getElementById('event-datetime').value = modeventDatetime;
     }
 
@@ -368,7 +469,62 @@
     });
 
     function unarchiveQuestion(id) {
-      socket.emit('moderator_action', { id, action: 'unarchive', password });
+      socket.emit('moderator_action', { id, action: 'unarchive', sortBy: currentSort });
+    }
+
+    // Function to enable editing of a question
+    function editQuestion(id) {
+      const questionElement = document.querySelector(`.question[data-id="${id}"]`);
+      if (!questionElement) return;
+
+      const questionTextElement = questionElement.querySelector('.question-text');
+      const originalText = questionTextElement.textContent.split(' | ')[0]; // Get original text, excluding votes
+
+      // Create a textarea for editing
+      const textarea = document.createElement('textarea');
+      textarea.value = originalText;
+      textarea.rows = 3;
+      textarea.style.width = '100%';
+      textarea.style.boxSizing = 'border-box'; // Include padding and border in the element's total width and height
+
+      // Replace the question text with the textarea
+      questionTextElement.innerHTML = '';
+      questionTextElement.appendChild(textarea);
+
+      // Hide Edit button, show Save and Cancel
+      const buttonsDiv = questionElement.querySelector('.buttons');
+      buttonsDiv.querySelector('button[onclick*="editQuestion"]').style.display = 'none';
+
+      const saveButton = document.createElement('button');
+      saveButton.textContent = 'Save';
+      saveButton.onclick = () => saveEditedQuestion(id, textarea.value);
+      buttonsDiv.appendChild(saveButton);
+
+      const cancelButton = document.createElement('button');
+      cancelButton.textContent = 'Cancel';
+      cancelButton.onclick = () => cancelEdit(id, originalText);
+      buttonsDiv.appendChild(cancelButton);
+    }
+
+    // Function to save the edited question
+    function saveEditedQuestion(id, newText) {
+      socket.emit('moderator_action', { id, action: 'edit', newText, sortBy: currentSort });
+    }
+
+    // Function to cancel editing a question
+    function cancelEdit(id, originalText) {
+      const questionElement = document.querySelector(`.question[data-id="${id}"]`);
+      if (!questionElement) return;
+
+      const questionTextElement = questionElement.querySelector('.question-text');
+      // Restore original text
+      questionTextElement.innerHTML = `${originalText} | <span class="vote-count">Votes: ${questionElement.querySelector('.vote-count').textContent.split(': ')[1]}</span>`;
+
+      // Show Edit button, hide Save and Cancel
+      const buttonsDiv = questionElement.querySelector('.buttons');
+      buttonsDiv.querySelector('button[onclick*="editQuestion"]').style.display = '';
+      buttonsDiv.querySelector('button[onclick*="saveEditedQuestion"]').remove();
+      buttonsDiv.querySelector('button[onclick*="cancelEdit"]').remove();
     }
   </script>
 

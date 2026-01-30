@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presenter View</title>
+    <link rel="stylesheet" href="presenter.css">
+</head>
+<body>
+    <div class="grid-container">
+        <div class="grid-item" id="live-question">
+            <h2>Live Question</h2>
+            <div id="live-question-content"></div>
+        </div>
+        <div class="grid-item" id="next-up-question">
+            <h2>Next Up</h2>
+            <div id="next-up-question-content"></div>
+        </div>
+        <div class="grid-item" id="approved-questions">
+            <h2>Approved Questions</h2>
+            <div id="approved-questions-content"></div>
+        </div>
+        <div class="grid-item" id="timer">
+            <h2>Question Time</h2>
+            <div id="timer-content">
+                <div id="timer-0-3" class="timer-range">0-3 min</div>
+                <div id="timer-3-5" class="timer-range">3-5 min</div>
+                <div id="timer-5-plus" class="timer-range">+5 min</div>
+                <div id="timer-10-plus" class="timer-range-large" style="display: none;">10+ min</div>
+            </div>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="presenter.js"></script>
+</body>
+</html>
