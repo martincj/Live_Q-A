@@ -1,6 +1,6 @@
 services:
   vbc_liveqa:
-    build: .
+    image: optionull/liveqa:latest
     platform: linux/amd64
     ports:
       - "3000:3000" # Map port 3000 on the host to port 3000 in the container

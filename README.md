@@ -38,8 +38,9 @@ A self-hostable, real-time web app for running live Q&A sessions with moderator 
  - [X] Add unarchive and unapprove buttons
  - [X] Add ability to set event name, URL, and Date/time in moderator view
  - [X] Persist participant ID across browser refresh unless eventName or eventDatetime has changed
- - [ ] Finalize styling and layout
+ - [ ] Separate style themes for frontends and add ability to choose between themes in the moderator panel
  - [ ] Include basic how-to information for participants and moderators
- - [ ] Run in docker and install on server
- - [ ] How to access from guest network?
+ - [X] Run in docker and install on server
+ - [X] How to access from guest network?
  - [ ] Can it be hosted on Bluehost?
+ - [ ] Create ability to have multiple sessions of the Q&A running with separate pools of questions
