@@ -1,0 +1,108 @@
+body {
+  font-family: sans-serif;
+  padding: 20px;
+  background: linear-gradient(to right, #0F181B, #0D2734); /* Gradient from left to right */
+  color: #D7E5D9; /* Light text color */
+}
+
+button {
+  background-color: #D7E5D9;
+  color: #0D2734; /* Dark text */
+  border: none; /* Remove border */
+  padding: 10px 20px; /* Add padding */
+  text-align: center; /* Center text */
+  text-decoration: none; /* Remove underline */
+  display: inline-block; /* Inline-block for layout */
+  font-size: 1em; /* Font size */
+  margin: 5px 0; /* Add margin */
+  cursor: pointer; /* Pointer cursor on hover */
+  border-radius: 0; /* Rounded corners */
+  transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+button:hover {
+  background-color: #D7E5D9; /* Light background on hover */
+}
+
+#sorting-controls {
+  margin-bottom: 20px; /* Add spacing below the sorting controls */
+}
+#questions div { margin: 0; padding: 10px;}
+.question {
+  display: flex;
+  flex-direction: column; /* Stack children vertically */
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+.question-text {
+  font-size: 1em;
+  margin-bottom: 10px; /* Add spacing between the question text and buttons */
+  border: none;
+}
+.buttons button {
+  margin-right: 5px; /* Add spacing between buttons */
+}  
+.live {
+  color:#0F181B;
+  background-color: lightgreen;
+}
+
+.next-up {
+  color:#0F181B;
+  background-color: yellow;
+}
+
+.approved {
+  font-weight: bold;
+  background-color:#235b61; /* Light background for approved questions */
+}
+
+#archived-questions {
+  border: 1px solid #ccc;
+  padding: 10px;
+  background-color: #f9f9f9;
+}
+.archived-question {
+  margin-bottom: 10px; /* Add spacing between questions */
+  padding: 10px; /* Add padding inside each question block */
+  border-bottom: 1px solid #ddd; /* Optional: Add a separator between questions */
+}
+.archived-date {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 5px; /* Add spacing between the question text and the date */
+}
+.timestamp {
+  font-size: 0.8em;
+  color: #aaa;
+  margin-top: 5px;
+}
+#top-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+#sorting-controls {
+  flex-grow: 1;
+}
+#live-question-area {
+  flex-basis: 50%;
+  margin-left: 20px;
+  /* Removed border: 2px solid yellow; */
+  padding: 10px;
+  border-radius: 5px;
+}
+#live-question-area .question {
+  /* background-color: transparent; // Removed */
+  border: none;
+}
+#next-up-question-area {
+  flex-basis: 50%;
+  margin-left: 20px;
+  padding: 10px;
+  border-radius: 5px;
+}

@@ -1,122 +1,38 @@
-<!-- filepath: /Users/chris/Documents/Github/Live_Q-A/public/moderator.html -->
 <!DOCTYPE html>
  <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link id="theme-stylesheet" rel="stylesheet" href="/themes/moderator/default.css">
   <title>Moderator Panel</title>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      background: linear-gradient(to right, #0F181B, #0D2734); /* Gradient from left to right */
-      color: #D7E5D9; /* Light text color */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #4caf50;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 1000;
     }
 
-    button {
-      background-color: #D7E5D9;
-      color: #0D2734; /* Dark text */
-      border: none; /* Remove border */
-      padding: 10px 20px; /* Add padding */
-      text-align: center; /* Center text */
-      text-decoration: none; /* Remove underline */
-      display: inline-block; /* Inline-block for layout */
-      font-size: 1em; /* Font size */
-      margin: 5px 0; /* Add margin */
-      cursor: pointer; /* Pointer cursor on hover */
-      border-radius: 0; /* Rounded corners */
-      transition: background-color 0.3s ease; /* Smooth hover effect */
-    }
-
-    button:hover {
-      background-color: #D7E5D9; /* Light background on hover */
-    }
-
-    #sorting-controls {
-      margin-bottom: 20px; /* Add spacing below the sorting controls */
-    }
-    #questions div { margin: 0; padding: 10px;}
-    .question {
-      display: flex;
-      flex-direction: column; /* Stack children vertically */
-      justify-content: flex-start;
-      align-items: flex-start;
-      margin-bottom: 15px;
-      padding: 10px;
-      border: 1px solid #ccc;
-    }
-    .question-text {
-      font-size: 1em;
-      margin-bottom: 10px; /* Add spacing between the question text and buttons */
-      border: none;
-    }
-    .buttons button {
-      margin-right: 5px; /* Add spacing between buttons */
-    }  
-    .live {
-      color:#0F181B;
-      background-color: lightgreen;
-    }
-
-    .next-up {
-      color:#0F181B;
-      background-color: yellow;
-    }
-
-    .approved {
-      font-weight: bold;
-      background-color:#235b61; /* Light background for approved questions */
-    }
-
-    #archived-questions {
-      border: 1px solid #ccc;
-      padding: 10px;
-      background-color: #f9f9f9;
-    }
-    .archived-question {
-      margin-bottom: 10px; /* Add spacing between questions */
-      padding: 10px; /* Add padding inside each question block */
-      border-bottom: 1px solid #ddd; /* Optional: Add a separator between questions */
-    }
-    .archived-date {
-      font-size: 0.9em;
-      color: #666;
-      margin-top: 5px; /* Add spacing between the question text and the date */
-    }
-    .timestamp {
-      font-size: 0.8em;
-      color: #aaa;
-      margin-top: 5px;
-    }
-    #top-panel {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 20px;
-    }
-    #sorting-controls {
-      flex-grow: 1;
-    }
-    #live-question-area {
-      flex-basis: 50%;
-      margin-left: 20px;
-      /* Removed border: 2px solid yellow; */
-      padding: 10px;
-      border-radius: 5px;
-    }
-    #live-question-area .question {
-      /* background-color: transparent; // Removed */
-      border: none;
-    }
-    #next-up-question-area {
-      flex-basis: 50%;
-      margin-left: 20px;
-      padding: 10px;
-      border-radius: 5px;
+    .toast.show {
+      opacity: 1;
+      visibility: visible;
     }
   </style>
 </head>
 <body>
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
   <h1>Moderator Panel</h1>
   <button onclick="window.location.href='/moderator_logout'">Logoff</button>
   <button id="configure-event-button" onclick="toggleConfigureEvent()">Configure Event</button>
@@ -131,6 +47,20 @@
 
     <label for="event-datetime">Event Date and Time:</label>
     <input type="datetime-local" id="event-datetime" placeholder="Select event date and time"><br><br>
+
+    <h4>Theme Selection</h4>
+    <label>User theme:
+      <select id="theme-index"></select>
+    </label><br>
+    <label>Live theme:
+      <select id="theme-live"></select>
+    </label><br>
+    <label>Moderator theme:
+      <select id="theme-moderator"></select>
+    </label><br>
+    <label>Presenter theme:
+      <select id="theme-presenter"></select>
+    </label><br><br>
 
     <button onclick="saveEventConfig()">Update</button>
   </div>
@@ -182,23 +112,57 @@
       }
     });
 
-    socket.on('next_up_question', (question) => {
-      const nextUpQuestionArea = document.getElementById('next-up-question-area');
-      if (question) {
-        nextUpQuestionArea.innerHTML = `
-          <h3>Next Up</h3>
-          <div class="question next-up" data-id="${question.id}">
-            <div class="question-text">${question.text} | <span class="vote-count">Votes: ${question.upvotes}</span></div>
-            <div class="username">Submitted by: ${question.username}</div>
-            <div class="timestamp">Submitted on: ${new Date(question.created_at).toLocaleString()}</div>
-            <div class="buttons">
-              <button onclick="markAsLive('${question.id}')">Live</button>
-              <button onclick="cancelNextUp('${question.id}')">Cancel</button>
-            </div>
-          </div>
-        `;
-      } else {
-        nextUpQuestionArea.innerHTML = '';
+    // Keep latest themes until selects are populated
+    let pendingThemes = null;
+
+    // Apply theme updates from server (store pending and apply when selects populated)
+    socket.on('theme_updated', (themes) => {
+      if (!themes) return;
+      pendingThemes = themes;
+      // Apply moderator view theme immediately if possible
+      const link = document.getElementById('theme-stylesheet');
+      if (link && themes['moderator']) link.href = '/themes/' + themes['moderator'];
+      // If selects are already populated, set their values (extract filename from full path)
+      const sIndex = document.getElementById('theme-index');
+      if (sIndex && sIndex.options.length) sIndex.value = themes.user ? themes.user.split('/').pop() : sIndex.value;
+      const sLive = document.getElementById('theme-live');
+      if (sLive && sLive.options.length) sLive.value = themes.live ? themes.live.split('/').pop() : sLive.value;
+      const sModerator = document.getElementById('theme-moderator');
+      if (sModerator && sModerator.options.length) sModerator.value = themes.moderator ? themes.moderator.split('/').pop() : sModerator.value;
+      const sPresenter = document.getElementById('theme-presenter');
+      if (sPresenter && sPresenter.options.length) sPresenter.value = themes.presenter ? themes.presenter.split('/').pop() : sPresenter.value;
+    });
+
+    // Populate theme selects dynamically when available
+    socket.on('available_themes', (themes) => {
+      if (!themes || typeof themes !== 'object') return;
+      const sIndex = document.getElementById('theme-index');
+      const sLive = document.getElementById('theme-live');
+      const sModerator = document.getElementById('theme-moderator');
+      const sPresenter = document.getElementById('theme-presenter');
+
+      function populate(selectEl, themeList) {
+        if (!selectEl || !themeList) return;
+        selectEl.innerHTML = '';
+        themeList.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t;
+          opt.textContent = t.replace('.css','');
+          selectEl.appendChild(opt);
+        });
+      }
+
+      populate(sIndex, themes.user || []);
+      populate(sLive, themes.live || []);
+      populate(sModerator, themes.moderator || []);
+      populate(sPresenter, themes.presenter || []);
+
+      // If we have pending themes from server, set selects to those
+      if (pendingThemes) {
+        if (pendingThemes.user && sIndex.querySelector(`option[value="${pendingThemes.user}"]`)) sIndex.value = pendingThemes.user;
+        if (pendingThemes.live && sLive.querySelector(`option[value="${pendingThemes.live}"]`)) sLive.value = pendingThemes.live;
+        if (pendingThemes.moderator && sModerator.querySelector(`option[value="${pendingThemes.moderator}"]`)) sModerator.value = pendingThemes.moderator;
+        if (pendingThemes.presenter && sPresenter.querySelector(`option[value="${pendingThemes.presenter}"]`)) sPresenter.value = pendingThemes.presenter;
       }
     });
 
@@ -339,6 +303,17 @@
       }
     }
 
+    // Show toast notification
+    function showToast(message, duration = 3000) {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, duration);
+    }
+
     // Save Event Configuration
     function saveEventConfig() {
       const modeventName = document.getElementById('event-name').value;
@@ -347,16 +322,23 @@
       const eventName = document.getElementById('event-name').value;
       const eventURL = document.getElementById('event-url-field').value;
       const eventDatetime = document.getElementById('event-datetime').value;
+      // Gather theme selections with proper folder paths
+      const themes = {
+        user: document.getElementById('theme-index') ? 'user/' + document.getElementById('theme-index').value : 'user/default.css',
+        live: document.getElementById('theme-live') ? 'live/' + document.getElementById('theme-live').value : 'live/default.css',
+        moderator: document.getElementById('theme-moderator') ? 'moderator/' + document.getElementById('theme-moderator').value : 'moderator/default.css',
+        presenter: document.getElementById('theme-presenter') ? 'presenter/' + document.getElementById('theme-presenter').value : 'presenter/default.css'
+      };
 
-      // Emit the event to the server with the event configuration values
-      socket.emit('save_event_config', { eventName, eventURL, eventDatetime });
+      // Emit the event to the server with the event configuration values and themes
+      socket.emit('save_event_config', { eventName, eventURL, eventDatetime, themes });
 
       // Save values to localStorage
       localStorage.setItem('modeventName', modeventName);
       localStorage.setItem('modeventURL', moderatorEventURL);
       localStorage.setItem('modeventDatetime', modeventDatetime);
 
-      alert('Event configuration saved!');
+      showToast('Event configuration updated!');
     }
 
     function loadEventConfig() {
@@ -466,6 +448,7 @@
         `;
         container.appendChild(div);
       });
+      
     });
 
     function unarchiveQuestion(id) {

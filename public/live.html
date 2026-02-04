@@ -4,55 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Live Question</title>
-  <style>
-    html, body {
-      height: 100%; /* Ensure both html and body take up the full height */
-      margin: 0; /* Remove default margin */
-      display: flex; /* Enable flexbox */
-      justify-content: center; /* Center horizontally */
-      align-items: center; /* Center vertically */
-      font-family: sans-serif;
-      text-align: center;
-      background: #000000;
-    }
-    #live-question-container {
-      display: flex;
-      flex-direction: column; /* Stack children vertically */
-      align-items: center; /* Center children horizontally */
-    }
-    #live-question {
-      font-size: calc(2vh + 2vmin + 2vw);
-      color: white;
-      padding: 20px;
-    }
-    #username {
-      font-style: italic;
-      font-size: calc(1vh + 1vmin + 1vw);
-      color: #e7ff2e;
-      margin-top: 10px;
-    }
-    #event-name {
-      font-size: calc(2vh + 2vmin + 1vw);
-      color: #ffffff;
-      margin-top: 20px;
-    }
-    #event-url {
-      font-size: calc(1.5vh + 1.5vmin + 1.5vw);
-      color: #ffffff;
-      margin-top: 10px;
-    }
-
-    #qr-code-container img {
-      width: 50vw; /* 20% of viewport width */
-      height: auto; /* Maintain aspect ratio */
-      max-width: 100%; /* Ensure it doesn't exceed 100% of the parent container */
-      max-height: 50vh; /* Ensure it doesn't exceed 20% of the viewport height */
-      /* You can also use max-width and max-height as a percentage of the parent container */
-      /* max-width: 50%; */
-      /* max-height: 50%; */
-      object-fit: contain; /* Maintain aspect ratio and fit within the container */
-    }
-  </style>
+  <link id="theme-stylesheet" rel="stylesheet" href="/themes/live/default.css">
 </head>
 <body>
   <div id="live-question-container">
@@ -67,6 +19,11 @@
   <script>
     // Test for Connection
     const socket = io();
+    const myView = 'live';
+    function applyThemeForView(themeFilename) {
+      const link = document.getElementById('theme-stylesheet');
+      if (link && themeFilename) link.href = '/themes/' + themeFilename;
+    }
     socket.on('connect', () => {
       console.log('Connected to server:', socket.id);
     });
@@ -150,6 +107,11 @@
       eventUrl.textContent = `To submit questions, please visit ${eventURL}`; // Update the DOM with the concatenated string
       localStorage.setItem('live_eventIP', currentEventURL); // Save the raw URL to localStorage
       generateQRCode(currentEventURL); // Generate QR code for the raw URL
+    });
+
+    // Apply theme updates from server
+    socket.on('theme_updated', (themes) => {
+      if (themes && themes[myView]) applyThemeForView(themes[myView]);
     });
 
     // Function to generate a QR code

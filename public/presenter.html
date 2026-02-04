@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presenter View</title>
-    <link rel="stylesheet" href="presenter.css">
+    <link id="theme-stylesheet" rel="stylesheet" href="/themes/presenter/default.css">
 </head>
 <body>
     <div class="grid-container">
@@ -32,5 +32,16 @@
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script src="presenter.js"></script>
+        <script>
+            const socket = io();
+            const myView = 'presenter';
+            function applyThemeForView(themeFilename) {
+                const link = document.getElementById('theme-stylesheet');
+                if (link && themeFilename) link.href = '/themes/' + themeFilename;
+            }
+            socket.on('theme_updated', (themes) => {
+                if (themes && themes[myView]) applyThemeForView(themes[myView]);
+            });
+        </script>
 </body>
 </html>

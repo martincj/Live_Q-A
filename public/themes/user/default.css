@@ -1,0 +1,72 @@
+/* Default theme for user view */
+body { 
+  font-family: Arial, sans-serif; 
+  max-width: 600px; 
+  margin: auto; 
+  padding: 20px; 
+  background: linear-gradient(to right, #0F181B, #0D2734); /* Gradient from left to right */
+  color: #D7E5D9;
+}
+
+/* Question input styling */
+#question {
+  background-color: #D7E5D9;
+}
+
+#username {
+  background-color: #D7E5D9;
+}
+
+#questions div {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #D7E5D9;
+  min-height: 40px;
+}
+
+.hidden { 
+  display: none; 
+}
+
+/* Button styling */
+button {
+  background-color: #EA0104; /* Red background */
+  color: #0D2734; /* Dark text */
+  border: none; /* Remove border */
+  padding: 10px 20px; /* Add padding */
+  text-align: center; /* Center text */
+  text-decoration: none; /* Remove underline */
+  display: inline-block; /* Inline-block for layout */
+  font-size: 1em; /* Font size */
+  margin: 5px 0; /* Add margin */
+  cursor: pointer; /* Pointer cursor on hover */
+  border-radius: 0; /* Rounded corners */
+  transition: background-color 0.3s ease; /* Smooth hover effect */
+}
+
+button:hover {
+  background-color: #D7E5D9; /* Light background on hover */
+}
+
+.question {
+  display: flex; /* Enable flexbox */
+  align-items: center; /* Vertically center child elements */
+  justify-content: space-between; /* Space between text and button */
+  padding: 10px;
+  border: 1px solid #D7E5D9;
+  margin: 10px 0;
+}
+
+.vote-button {
+  padding: 10px 20px;
+}
+
+.vote-count {
+  font-size: .8em;
+}
+
+.username {
+  font-style: italic;
+  color: #EA0104;
+  font-size: .8em;
+}

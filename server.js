@@ -6,6 +6,8 @@ const sqlite3 = require('sqlite3').verbose();
 const os = require('os');
 const session = require('express-session');
 const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
 
 const SERVER_IP = process.env.SERVER_IP || 'localhost';
 const app = express();
@@ -27,6 +29,54 @@ app.use(express.json());
 app.use(express.static('public'));
 
 const db = new sqlite3.Database('./database/questions.db');
+
+const CONFIG_DIR = path.join(__dirname, 'config');
+const CONFIG_PATH = path.join(CONFIG_DIR, 'event_config.json');
+
+function ensureConfig() {
+  if (!fs.existsSync(CONFIG_DIR)) fs.mkdirSync(CONFIG_DIR);
+  if (!fs.existsSync(CONFIG_PATH)) {
+    const defaultCfg = { themes: { user: 'user/default.css', live: 'live/default.css', moderator: 'moderator/default.css', presenter: 'presenter/default.css' }, eventName: 'VBC Event', eventDatetime: '' };
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(defaultCfg, null, 2));
+  }
+}
+
+function loadConfig() {
+  try {
+    ensureConfig();
+    return JSON.parse(fs.readFileSync(CONFIG_PATH));
+  } catch (e) {
+    return { themes: { user: 'user/default.css', live: 'live/default.css', moderator: 'moderator/default.css', presenter: 'presenter/default.css' } };
+  }
+}
+
+function saveConfig(cfg) {
+  ensureConfig();
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2));
+}
+
+// Return organized theme files grouped by view folder
+function listThemesByView() {
+  try {
+    const themesDir = path.join(__dirname, 'public', 'themes');
+    if (!fs.existsSync(themesDir)) return { user: [], live: [], moderator: [], presenter: [] };
+    
+    const views = { user: [], live: [], moderator: [], presenter: [] };
+    const entries = fs.readdirSync(themesDir, { withFileTypes: true });
+    
+    entries.forEach(entry => {
+      if (entry.isDirectory() && views.hasOwnProperty(entry.name)) {
+        const viewDir = path.join(themesDir, entry.name);
+        const files = fs.readdirSync(viewDir).filter(f => f.endsWith('.css'));
+        views[entry.name] = files;
+      }
+    });
+    
+    return views;
+  } catch (e) {
+    return { user: [], live: [], moderator: [], presenter: [] };
+  }
+}
 
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS questions (
@@ -104,6 +154,11 @@ app.get('/questions', (req, res) => {
 // Add an endpoint to serve the live page
 app.get('/live', (req, res) => {
   res.sendFile(__dirname + '/public/live.html');
+});
+
+// Serve user page at root
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/user.html');
 });
 
 // Moderator login page
@@ -465,9 +520,33 @@ io.on('connection', (socket) => {
     io.emit('event_url_updated', { eventURL });
     io.emit('event_datetime_updated', { eventDatetime });
   });
+  socket.on('save_event_config', ({ eventName, eventURL, eventDatetime, themes }) => {
+    console.log('Received eventDatetime from moderator:', eventDatetime);
+    currentEventName = eventName;
+    currentEventDatetime = eventDatetime;
+    console.log('Event updated:', eventName, eventURL, eventDatetime);
+    // Persist config (load, update, save)
+    const cfg = loadConfig();
+    cfg.eventName = eventName;
+    cfg.eventDatetime = eventDatetime;
+    cfg.eventURL = eventURL;
+    if (themes) cfg.themes = themes;
+    saveConfig(cfg);
+
+    io.emit('event_name_updated', { eventName });
+    io.emit('event_url_updated', { eventURL });
+    io.emit('event_datetime_updated', { eventDatetime });
+    // Broadcast theme update
+    io.emit('theme_updated', cfg.themes || {});
+  });
 
   socket.emit('event_name_updated', { eventName: currentEventName });
   socket.emit('event_datetime_updated', { eventDatetime: currentEventDatetime });
+  // Send current theme config to the newly connected client
+  const cfg = loadConfig();
+  socket.emit('theme_updated', cfg.themes || {});
+  // Send available themes organized by view
+  socket.emit('available_themes', listThemesByView());
 
   socket.on('request_export_data', () => {
     const questionsQuery = `SELECT * FROM questions`;

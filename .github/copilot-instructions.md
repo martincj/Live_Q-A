@@ -20,7 +20,7 @@ Three main tables govern the application:
 ### Backend Architecture (`server.js`)
 
 **Express Routes**:
-- `/` → Participant Q&A interface (index.html)
+/`/` → Participant Q&A interface (user.html)
 - `/live` → Projection display for events (live.html)
 - `/presenter` → Alternative presentation view (presenter.html)
 - `/moderator_login` → Password authentication gateway
@@ -40,7 +40,7 @@ Three main tables govern the application:
 
 | File | Role | Purpose |
 |------|------|---------|
-| `index.html` | Participants | Submit questions, browse approved questions, vote in real-time |
+| `user.html` | Participants | Submit questions, browse approved questions, vote in real-time |
 | `live.html` | Presentation | Display single live question + next_up for projection |
 | `moderator.html` | Admin | Approve/archive/edit questions, manage timer and event config |
 | `presenter.html` | Alt-presenter | Alternative presentation view |
@@ -113,7 +113,7 @@ Every moderator action triggers `emitAllQuestions()` which:
 - **Question lifecycle actions**: [server.js#L250-L350](server.js#L250-L350)
 - **Voting logic**: [server.js#L380-L400](server.js#L380-L400)
 - **Database init**: [server.js#L32-L50](server.js#L32-L50)
-- **Frontend Socket listeners**: [public/index.html](public/index.html) (vanilla JS event handlers)
+- **Frontend Socket listeners**: [public/user.html](public/user.html) (vanilla JS event handlers)
 
 ## Testing & Debugging
 

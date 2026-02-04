@@ -1,0 +1,11 @@
+{
+  "themes": {
+    "user": "user/ocean.css",
+    "live": "live/default.css",
+    "moderator": "moderator/default.css",
+    "presenter": "presenter/default.css"
+  },
+  "eventName": "VBC Live Event",
+  "eventDatetime": "2026-01-31T11:06",
+  "eventURL": "e.g. 10.10.20.20"
+}

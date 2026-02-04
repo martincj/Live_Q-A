@@ -1,0 +1,47 @@
+html, body {
+  height: 100%; /* Ensure both html and body take up the full height */
+  margin: 0; /* Remove default margin */
+  display: flex; /* Enable flexbox */
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+  font-family: sans-serif;
+  text-align: center;
+  background: #000000;
+}
+#live-question-container {
+  display: flex;
+  flex-direction: column; /* Stack children vertically */
+  align-items: center; /* Center children horizontally */
+}
+#live-question {
+  font-size: calc(2vh + 2vmin + 2vw);
+  color: white;
+  padding: 20px;
+}
+#username {
+  font-style: italic;
+  font-size: calc(1vh + 1vmin + 1vw);
+  color: #e7ff2e;
+  margin-top: 10px;
+}
+#event-name {
+  font-size: calc(2vh + 2vmin + 1vw);
+  color: #ffffff;
+  margin-top: 20px;
+}
+#event-url {
+  font-size: calc(1.5vh + 1.5vmin + 1.5vw);
+  color: #ffffff;
+  margin-top: 10px;
+}
+
+#qr-code-container img {
+  width: 50vw; /* 20% of viewport width */
+  height: auto; /* Maintain aspect ratio */
+  max-width: 100%; /* Ensure it doesn't exceed 100% of the parent container */
+  max-height: 50vh; /* Ensure it doesn't exceed 20% of the viewport height */
+  /* You can also use max-width and max-height as a percentage of the parent container */
+  /* max-width: 50%; */
+  /* max-height: 50%; */
+  object-fit: contain; /* Maintain aspect ratio and fit within the container */
+}
