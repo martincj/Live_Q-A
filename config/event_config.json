@@ -1,6 +1,6 @@
 {
   "themes": {
-    "user": "user/ocean.css",
+    "user": "user/default.css",
     "live": "live/default.css",
     "moderator": "moderator/default.css",
     "presenter": "presenter/default.css"

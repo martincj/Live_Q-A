@@ -8,16 +8,16 @@
 </head>
 <body>
     <div class="grid-container">
-        <div class="grid-item" id="live-question">
-            <h2>Live Question</h2>
-            <div id="live-question-content"></div>
-        </div>
         <div class="grid-item" id="next-up-question">
             <h2>Next Up</h2>
             <div id="next-up-question-content"></div>
         </div>
+        <div class="grid-item" id="live-question">
+            <h2>Live Question</h2>
+            <div id="live-question-content"></div>
+        </div>
         <div class="grid-item" id="approved-questions">
-            <h2>Approved Questions</h2>
+            <h2>Approved Questions <span id="approved-count">(0)</span></h2>
             <div id="approved-questions-content"></div>
         </div>
         <div class="grid-item" id="timer">
@@ -32,16 +32,15 @@
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script src="presenter.js"></script>
-        <script>
-            const socket = io();
-            const myView = 'presenter';
-            function applyThemeForView(themeFilename) {
-                const link = document.getElementById('theme-stylesheet');
-                if (link && themeFilename) link.href = '/themes/' + themeFilename;
-            }
-            socket.on('theme_updated', (themes) => {
-                if (themes && themes[myView]) applyThemeForView(themes[myView]);
-            });
-        </script>
+    <script>
+        const myView = 'presenter';
+        function applyThemeForView(themeFilename) {
+            const link = document.getElementById('theme-stylesheet');
+            if (link && themeFilename) link.href = '/themes/' + themeFilename;
+        }
+        socket.on('theme_updated', (themes) => {
+            if (themes && themes[myView]) applyThemeForView(themes[myView]);
+        });
+    </script>
 </body>
 </html>

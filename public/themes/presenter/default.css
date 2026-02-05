@@ -1,6 +1,6 @@
 body {
     font-family: sans-serif;
-    background: linear-gradient(to right, #0F181B, #0D2734);
+    background-color: black;
     color: #D7E5D9;
     margin: 0;
     padding: 20px;
@@ -19,6 +19,18 @@ body {
     padding: 20px;
     border-radius: 5px;
     overflow-y: auto;
+}
+
+#next-up-question {
+    border-color: greenyellow;
+    color: #ccc;
+}
+
+#live-question {
+    border-color: orangered;
+    border-width: 3px;
+    color: white;
+    font-size: 2em;
 }
 
 #timer-content {

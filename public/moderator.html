@@ -112,6 +112,27 @@
       }
     });
 
+    // Show the Next Up question in the top panel
+    socket.on('next_up_question', (question) => {
+      const nextUpArea = document.getElementById('next-up-question-area');
+      if (question) {
+        nextUpArea.innerHTML = `
+          <h3>Next Up</h3>
+          <div class="question next-up" data-id="${question.id}">
+            <div class="question-text">${question.text} | <span class="vote-count">Votes: ${question.upvotes}</span></div>
+            <div class="username">Submitted by: ${question.username}</div>
+            <div class="timestamp">Submitted on: ${new Date(question.created_at).toLocaleString()}</div>
+            <div class="buttons">
+              <button onclick="markAsLive('${question.id}')">Make Live</button>
+              <button onclick="cancelNextUp('${question.id}')">Cancel Next Up</button>
+            </div>
+          </div>
+        `;
+      } else {
+        nextUpArea.innerHTML = '';
+      }
+    });
+
     // Keep latest themes until selects are populated
     let pendingThemes = null;
 

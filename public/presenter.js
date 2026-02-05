@@ -36,6 +36,11 @@ socket.on('approved_questions', (questions) => {
         div.innerHTML = `<div>${q.text}</div><div>- ${q.username}</div><hr>`;
         approvedQuestionsContent.appendChild(div);
     });
+    // Update the approved questions count
+    const approvedCount = document.getElementById('approved-count');
+    if (approvedCount) {
+        approvedCount.textContent = `(${questions.length})`;
+    }
 });
 
 function fetchApprovedQuestions() {
