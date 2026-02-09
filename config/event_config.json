@@ -1,6 +1,6 @@
 {
   "themes": {
-    "user": "user/default.css",
+    "user": "user/amber.css",
     "live": "live/default.css",
     "moderator": "moderator/default.css",
     "presenter": "presenter/default.css"

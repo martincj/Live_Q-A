@@ -33,11 +33,20 @@
   <!-- Toast Notification -->
   <div id="toast" class="toast"></div>
 
-  <h1>Moderator Panel</h1>
-  <button onclick="window.location.href='/moderator_logout'">Logoff</button>
-  <button id="configure-event-button" onclick="toggleConfigureEvent()">Configure Event</button>
+  <div class="mod-header">
+    <h1>Moderator Panel</h1>
+    <div class="header-actions">
+      <button onclick="window.location.href='/moderator_logout'">Logoff</button>
+      <button id="configure-event-button" onclick="toggleConfigureEvent()" aria-label="Configure Event">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 2.28 16.8l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09c.68 0 1.25-.41 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 6.1 2.28l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09c0 .68.41 1.25 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 1 1 21.72 7.2l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.34.31.74.62 1.2.86z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 
-  <div id="configure-event" style="display: none; margin-top: 20px; border: 1px solid #ccc; padding: 10px;">
+  <div id="configure-event">
     <h3>Event Configuration</h3>
     <label for="event-name">Event Name:</label>
     <input type="text" id="event-name" placeholder="Enter event name"><br><br>
@@ -48,16 +57,16 @@
     <label for="event-datetime">Event Date and Time:</label>
     <input type="datetime-local" id="event-datetime" placeholder="Select event date and time"><br><br>
 
-    <h4>Theme Selection</h4>
+    <h3>Theme Selection</h3>
     <label>User theme:
       <select id="theme-index"></select>
-    </label><br>
+    </label><br><br>
     <label>Live theme:
       <select id="theme-live"></select>
-    </label><br>
+    </label><br><br>
     <label>Moderator theme:
       <select id="theme-moderator"></select>
-    </label><br>
+    </label><br><br>
     <label>Presenter theme:
       <select id="theme-presenter"></select>
     </label><br><br>
@@ -67,17 +76,18 @@
 
   <!-- Top panel for sorting and live question -->
   <div id="top-panel">
-    <!-- Add sorting buttons -->
-    <div id="sorting-controls">
-      <button onclick="changeSort('recency')">Sort by Recency</button>
-      <button onclick="changeSort('approved')">Sort by Approved</button>
-      <button onclick="changeSort('votes')">Sort by Votes</button>
-    </div>
     <!-- Live question area -->
     <div id="live-question-area"></div>
     <!-- Next Up question area -->
     <div id="next-up-question-area"></div>
   </div>
+  <!-- Add sorting buttons -->
+    <div id="sorting-controls">
+      <span class="sorting-label">Sort by:</span>
+      <button onclick="changeSort('recency')">Recency</button>
+      <button onclick="changeSort('approved')">Approved</button>
+      <button onclick="changeSort('votes')">Votes</button>
+    </div>
 
   <!-- Question list container -->
   <div id="questions"></div>
@@ -99,8 +109,8 @@
           <h3>Live Question</h3>
           <div class="question live" data-id="${question.id}">
             <div class="question-text">${question.text} | <span class="vote-count">Votes: ${question.upvotes}</span></div>
-            <div class="username">Submitted by: ${question.username}</div>
-            <div class="timestamp">Submitted on: ${new Date(question.created_at).toLocaleString()}</div>
+            <div class="username">From: ${question.username}</div>
+            <div class="timestamp">${new Date(question.created_at).toLocaleString()}</div>
             <div class="buttons">
               <button onclick="cancelLive('${question.id}')">Cancel</button>
               <button onclick="archive_question('${question.id}')">Archive</button>
@@ -315,13 +325,17 @@
       const configDiv = document.getElementById('configure-event');
       const button = document.getElementById('configure-event-button');
 
-      if (configDiv.style.display === 'none') {
-        configDiv.style.display = 'block';
-        button.textContent = 'Close Configuration';
-      } else {
-        configDiv.style.display = 'none';
-        button.textContent = 'Configure Event';
-      }
+        if (configDiv.style.display === 'none') {
+          configDiv.style.display = 'block';
+          // show a close (X) SVG when open
+          button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+          button.setAttribute('aria-label','Close Configuration');
+        } else {
+          configDiv.style.display = 'none';
+          // show a gear SVG when closed
+          button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 2.28 16.8l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09c.68 0 1.25-.41 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 6.1 2.28l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09c0 .68.41 1.25 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 1 1 21.72 7.2l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.34.31.74.62 1.2.86z"/><circle cx="12" cy="12" r="3"/></svg>';
+          button.setAttribute('aria-label','Configure Event');
+        }
     }
 
     // Show toast notification

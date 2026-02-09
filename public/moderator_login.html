@@ -4,51 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moderator Login</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            background: linear-gradient(to right, #0F181B, #0D2734);
-            color: #D7E5D9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .login-container {
-            text-align: center;
-        }
-        input {
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background-color: #D7E5D9;
-            color: #0D2734;
-            border: none;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 1em;
-            margin: 5px 0;
-            cursor: pointer;
-            border-radius: 0;
-            transition: background-color 0.3s ease;
-        }
-        button:hover {
-            background-color: #b0c4b1;
-        }
-    </style>
+    <link id="theme-stylesheet" rel="stylesheet" href="/themes/moderator/default.css">
 </head>
-<body>
+<body class="moderator-login">
     <div class="login-container">
         <h1>Moderator Login</h1>
         <form action="/moderator_login" method="POST">
-            <input type="password" name="password" placeholder="Enter password" required>
+            <input id="moderator-password" type="password" name="password" placeholder="Enter password" required autofocus autocomplete="current-password">
             <br>
             <button type="submit">Login</button>
         </form>
