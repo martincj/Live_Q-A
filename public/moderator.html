@@ -85,7 +85,6 @@
     <div id="sorting-controls">
       <span class="sorting-label">Sort by:</span>
       <button onclick="changeSort('recency')">Recency</button>
-      <button onclick="changeSort('approved')">Approved</button>
       <button onclick="changeSort('votes')">Votes</button>
     </div>
 
@@ -113,7 +112,7 @@
             <div class="timestamp">${new Date(question.created_at).toLocaleString()}</div>
             <div class="buttons">
               <button onclick="cancelLive('${question.id}')">Cancel</button>
-              <button onclick="archive_question('${question.id}')">Archive</button>
+              <button onclick="delete_question('${question.id}')">Delete</button>
             </div>
           </div>
         `;
@@ -241,6 +240,7 @@
                 ? `<button onclick="unapprove('${q.id}')">Unapprove</button>` 
                 : `<button onclick="approve('${q.id}')">Approve</button>`}
               <button onclick="delete_question('${q.id}')">Delete</button>
+              <button onclick="archive_question('${q.id}')">Archive</button>
               ${q.status !== 'live' && q.status !== 'next_up'
                 ? `<button onclick="editQuestion('${q.id}')">Edit</button>` 
                 : ''}
