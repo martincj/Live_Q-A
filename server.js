@@ -343,10 +343,23 @@ io.on('connection', (socket) => {
     };
 
     if (action === 'questiondeleted') {
-      db.run("DELETE FROM questions WHERE id = ?", [id], (err) => {
-        if (!err) {
-          emitAllQuestions();
-        }
+      db.get("SELECT status FROM questions WHERE id = ?", [id], (err, row) => {
+        const wasLive = row && row.status === 'live';
+        const wasNextUp = row && row.status === 'next_up';
+
+        db.run("DELETE FROM questions WHERE id = ?", [id], (err) => {
+          if (!err) {
+            db.run("DELETE FROM votes WHERE question_id = ?", [id]);
+            if (wasLive) {
+              io.emit('live_question', null);
+              stopTimer();
+            }
+            if (wasNextUp) {
+              io.emit('next_up_question', null);
+            }
+            emitAllQuestions();
+          }
+        });
       });
     }
 
@@ -416,6 +429,8 @@ io.on('connection', (socket) => {
       db.get("SELECT * FROM questions WHERE id = ?", [id], (err, question) => {
         if (!err && question) {
           const archivedAt = Date.now();
+          const wasLive = question.status === 'live';
+          const wasNextUp = question.status === 'next_up';
           db.run(
             `INSERT INTO archived_questions (id, username, text, status, upvotes, archived_at) VALUES (?, ?, ?, ?, ?, ?)`,
             [question.id, question.username, question.text, question.status, question.upvotes, archivedAt],
@@ -423,6 +438,14 @@ io.on('connection', (socket) => {
               if (!err) {
                 db.run("DELETE FROM questions WHERE id = ?", [id], (err) => {
                   if (!err) {
+                    db.run("DELETE FROM votes WHERE question_id = ?", [id]);
+                    if (wasLive) {
+                      io.emit('live_question', null);
+                      stopTimer();
+                    }
+                    if (wasNextUp) {
+                      io.emit('next_up_question', null);
+                    }
                     emitAllQuestions();
                     db.all("SELECT * FROM archived_questions", [], (err, rows) => {
                       if (!err) socket.emit('archived_questions', rows);
