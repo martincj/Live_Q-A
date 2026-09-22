@@ -99,6 +99,20 @@
     // Listen for all questions and update the list
     socket.on('all_questions', (questions) => {
       updateQuestionList(questions);
+
+      // Keep live question area in sync with all_questions state
+      const hasLiveQuestion = questions.some(q => q.status === 'live');
+      if (!hasLiveQuestion) {
+        const liveArea = document.getElementById('live-question-area');
+        if (liveArea) liveArea.innerHTML = '';
+      }
+
+      // Keep next up question area in sync with all_questions state
+      const hasNextUpQuestion = questions.some(q => q.status === 'next_up');
+      if (!hasNextUpQuestion) {
+        const nextUpArea = document.getElementById('next-up-question-area');
+        if (nextUpArea) nextUpArea.innerHTML = '';
+      }
     });
 
     socket.on('live_question', (question) => {
@@ -112,7 +126,7 @@
             <div class="timestamp">${new Date(question.created_at).toLocaleString()}</div>
             <div class="buttons">
               <button onclick="cancelLive('${question.id}')">Cancel</button>
-              <button onclick="delete_question('${question.id}')">Delete</button>
+              <button onclick="deleteLiveQuestion('${question.id}')">Delete</button>
             </div>
           </div>
         `;
@@ -273,11 +287,15 @@
 
     // Cancel next up status
     function cancelNextUp(id) {
+      const nextUpArea = document.getElementById('next-up-question-area');
+      if (nextUpArea) nextUpArea.innerHTML = '';
       socket.emit('moderator_action', { id, action: 'cancel_next_up', sortBy: currentSort });
     }
 
     // Cancel live status
     function cancelLive(id) {
+      const liveArea = document.getElementById('live-question-area');
+      if (liveArea) liveArea.innerHTML = '';
       socket.emit('moderator_action', { id, action: 'cancel_live', sortBy: currentSort });
     }
 
@@ -291,13 +309,51 @@
       socket.emit('moderator_action', { id, action: 'unapprove', sortBy: currentSort });
     }
 
+    // delete live question directly from top panel
+    function deleteLiveQuestion(id) {
+      const liveArea = document.getElementById('live-question-area');
+      if (liveArea) liveArea.innerHTML = '';
+      showToast('Question deleted');
+      socket.emit('moderator_action', { id, action: 'questiondeleted', sortBy: currentSort });
+    }
+
     // delete a question
     function delete_question(id) {
+      const liveArea = document.getElementById('live-question-area');
+      if (liveArea) {
+        const liveCard = liveArea.querySelector('.question');
+        if (liveCard && liveCard.getAttribute('data-id') === id) {
+          liveArea.innerHTML = '';
+        }
+      }
+      const nextUpArea = document.getElementById('next-up-question-area');
+      if (nextUpArea) {
+        const nextUpCard = nextUpArea.querySelector('.question');
+        if (nextUpCard && nextUpCard.getAttribute('data-id') === id) {
+          nextUpArea.innerHTML = '';
+        }
+      }
+      showToast('Question deleted');
       socket.emit('moderator_action', { id, action: 'questiondeleted', sortBy: currentSort });
     }
 
     // Archive a question
     function archive_question(id) {
+      const liveArea = document.getElementById('live-question-area');
+      if (liveArea) {
+        const liveCard = liveArea.querySelector('.question');
+        if (liveCard && liveCard.getAttribute('data-id') === id) {
+          liveArea.innerHTML = '';
+        }
+      }
+      const nextUpArea = document.getElementById('next-up-question-area');
+      if (nextUpArea) {
+        const nextUpCard = nextUpArea.querySelector('.question');
+        if (nextUpCard && nextUpCard.getAttribute('data-id') === id) {
+          nextUpArea.innerHTML = '';
+        }
+      }
+      showToast('Question archived');
       socket.emit('moderator_action', { id, action: 'archive', sortBy: currentSort });
     }
 
