@@ -343,36 +343,31 @@ io.on('connection', (socket) => {
     };
 
     if (action === 'questiondeleted') {
-      db.get("SELECT id, status FROM questions WHERE id = ?", [id], (err, targetQuestion) => {
-        const wasLive = targetQuestion && targetQuestion.status === 'live';
-        const wasNextUp = targetQuestion && targetQuestion.status === 'next_up';
+      db.run("DELETE FROM questions WHERE id = ?", [id], (deleteErr) => {
+        if (!deleteErr) {
+          db.run("DELETE FROM votes WHERE question_id = ?", [id]);
 
-        db.run("DELETE FROM questions WHERE id = ?", [id], (deleteErr) => {
-          if (!deleteErr) {
-            db.run("DELETE FROM votes WHERE question_id = ?", [id]);
+          db.get("SELECT * FROM questions WHERE status = 'live'", [], (liveErr, liveRow) => {
+            if (!liveRow || (liveRow && liveRow.id === id)) {
+              io.emit('live_question', null);
+              stopTimer();
+            } else {
+              io.emit('live_question', liveRow);
+            }
+          });
 
-            db.get("SELECT * FROM questions WHERE status = 'live'", [], (liveErr, liveRow) => {
-              if (!liveRow || wasLive || (liveRow && liveRow.id === id)) {
-                io.emit('live_question', null);
-                stopTimer();
-              } else {
-                io.emit('live_question', liveRow);
-              }
-            });
+          db.get("SELECT * FROM questions WHERE status = 'next_up'", [], (nextUpErr, nextUpRow) => {
+            if (!nextUpRow || (nextUpRow && nextUpRow.id === id)) {
+              io.emit('next_up_question', null);
+            } else {
+              io.emit('next_up_question', nextUpRow);
+            }
+          });
 
-            db.get("SELECT * FROM questions WHERE status = 'next_up'", [], (nextUpErr, nextUpRow) => {
-              if (!nextUpRow || wasNextUp || (nextUpRow && nextUpRow.id === id)) {
-                io.emit('next_up_question', null);
-              } else {
-                io.emit('next_up_question', nextUpRow);
-              }
-            });
-
-            emitAllQuestions();
-          } else {
-            console.error('Error deleting question:', deleteErr);
-          }
-        });
+          emitAllQuestions();
+        } else {
+          console.error('Error deleting question:', deleteErr);
+        }
       });
     }
 
