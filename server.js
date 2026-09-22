@@ -343,21 +343,34 @@ io.on('connection', (socket) => {
     };
 
     if (action === 'questiondeleted') {
-      db.get("SELECT status FROM questions WHERE id = ?", [id], (err, row) => {
-        const wasLive = row && row.status === 'live';
-        const wasNextUp = row && row.status === 'next_up';
+      db.get("SELECT id, status FROM questions WHERE id = ?", [id], (err, targetQuestion) => {
+        const wasLive = targetQuestion && targetQuestion.status === 'live';
+        const wasNextUp = targetQuestion && targetQuestion.status === 'next_up';
 
-        db.run("DELETE FROM questions WHERE id = ?", [id], (err) => {
-          if (!err) {
+        db.run("DELETE FROM questions WHERE id = ?", [id], (deleteErr) => {
+          if (!deleteErr) {
             db.run("DELETE FROM votes WHERE question_id = ?", [id]);
-            if (wasLive) {
-              io.emit('live_question', null);
-              stopTimer();
-            }
-            if (wasNextUp) {
-              io.emit('next_up_question', null);
-            }
+
+            db.get("SELECT * FROM questions WHERE status = 'live'", [], (liveErr, liveRow) => {
+              if (!liveRow || wasLive || (liveRow && liveRow.id === id)) {
+                io.emit('live_question', null);
+                stopTimer();
+              } else {
+                io.emit('live_question', liveRow);
+              }
+            });
+
+            db.get("SELECT * FROM questions WHERE status = 'next_up'", [], (nextUpErr, nextUpRow) => {
+              if (!nextUpRow || wasNextUp || (nextUpRow && nextUpRow.id === id)) {
+                io.emit('next_up_question', null);
+              } else {
+                io.emit('next_up_question', nextUpRow);
+              }
+            });
+
             emitAllQuestions();
+          } else {
+            console.error('Error deleting question:', deleteErr);
           }
         });
       });
@@ -434,21 +447,28 @@ io.on('connection', (socket) => {
           db.run(
             `INSERT INTO archived_questions (id, username, text, status, upvotes, archived_at) VALUES (?, ?, ?, ?, ?, ?)`,
             [question.id, question.username, question.text, question.status, question.upvotes, archivedAt],
-            (err) => {
-              if (!err) {
-                db.run("DELETE FROM questions WHERE id = ?", [id], (err) => {
-                  if (!err) {
+            (insertErr) => {
+              if (!insertErr) {
+                db.run("DELETE FROM questions WHERE id = ?", [id], (deleteErr) => {
+                  if (!deleteErr) {
                     db.run("DELETE FROM votes WHERE question_id = ?", [id]);
-                    if (wasLive) {
-                      io.emit('live_question', null);
-                      stopTimer();
-                    }
-                    if (wasNextUp) {
-                      io.emit('next_up_question', null);
-                    }
+
+                    db.get("SELECT * FROM questions WHERE status = 'live'", [], (liveErr, liveRow) => {
+                      if (!liveRow || wasLive || (liveRow && liveRow.id === id)) {
+                        io.emit('live_question', null);
+                        stopTimer();
+                      }
+                    });
+
+                    db.get("SELECT * FROM questions WHERE status = 'next_up'", [], (nextUpErr, nextUpRow) => {
+                      if (!nextUpRow || wasNextUp || (nextUpRow && nextUpRow.id === id)) {
+                        io.emit('next_up_question', null);
+                      }
+                    });
+
                     emitAllQuestions();
-                    db.all("SELECT * FROM archived_questions", [], (err, rows) => {
-                      if (!err) socket.emit('archived_questions', rows);
+                    db.all("SELECT * FROM archived_questions", [], (fetchErr, rows) => {
+                      if (!fetchErr) socket.emit('archived_questions', rows);
                     });
                   }
                 });
